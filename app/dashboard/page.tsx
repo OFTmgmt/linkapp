@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download } from 'lucide-react'
+import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -238,8 +238,11 @@ export default function Dashboard() {
                               <ExternalLink size={16} />
                             </a>
                             <a href={`/dashboard/edit/${page.id}`} className="text-gray-300 hover:text-blue-500 p-1.5" title="Modifier">
-                              <Link size={16} />
+                              <Paintbrush size={16} />
                             </a>
+                            <button onClick={() => navigator.clipboard.writeText(`https://my-links-page.com/${page.slug}`)} className="text-gray-300 hover:text-pink-500 p-1.5" title="Copier le lien">
+                              <Link size={16} />
+                            </button>
                             <a href={`/dashboard/analytics/${page.id}`} className="text-gray-300 hover:text-purple-500 p-1.5" title="Stats">
                               <LineChart size={16} />
                             </a>
