@@ -412,7 +412,7 @@ export default function EditPage() {
                       </div>
                     )}
                     {/* Personnalisation du bouton */}
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Taille</p>
                         <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
