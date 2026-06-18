@@ -21,7 +21,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
       <PageViewTracker pageId={page.id} />
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-4">
         {page.avatar_url && (
-          <img src={page.avatar_url} alt={page.title} className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
+          <img src={page.avatar_url} alt={page.title} className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" />
         )}
 
         <h1 className="text-2xl font-bold text-white drop-shadow">{page.title}</h1>
