@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart } from 'lucide-react'
+import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -27,6 +27,9 @@ export default function Dashboard() {
   const [newPage, setNewPage] = useState({ title: '', slug: '', background_color: '#ff6eb4' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [exportFolder, setExportFolder] = useState<{ id: string; name: string } | null>(null)
+  const [exportDates, setExportDates] = useState({ from: new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10), to: new Date().toISOString().slice(0,10) })
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -124,6 +127,22 @@ export default function Dashboard() {
     loadData()
   }
 
+  async function exportCSV() {
+    setExporting(true)
+    const params = new URLSearchParams({ from: exportDates.from, to: exportDates.to })
+    if (exportFolder?.id) params.set('folder_id', exportFolder.id)
+    const res = await fetch(`/api/export-clicks?${params}`)
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `clics-${exportFolder?.name || 'tous'}-${exportDates.from}-${exportDates.to}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportFolder(null)
+    setExporting(false)
+  }
+
   if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Chargement...</div>
 
   return (
@@ -188,6 +207,9 @@ export default function Dashboard() {
                     >
                       <Plus size={14} /> Page
                     </button>
+                    <button onClick={() => setExportFolder({ id: folder.id, name: folder.name })} className="text-gray-300 hover:text-green-500 p-1" title="Exporter CSV">
+                      <Download size={16} />
+                    </button>
                     <button onClick={() => deleteFolder(folder.id)} className="text-gray-300 hover:text-red-400 p-1">
                       <Trash2 size={16} />
                     </button>
@@ -238,6 +260,33 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      {exportFolder !== null && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg mb-1">Exporter les clics</h3>
+            <p className="text-sm text-gray-400 mb-4">Dossier : <span className="text-gray-700 font-medium">{exportFolder.name}</span></p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Date de début</label>
+                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  value={exportDates.from} onChange={e => setExportDates(d => ({ ...d, from: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Date de fin</label>
+                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  value={exportDates.to} onChange={e => setExportDates(d => ({ ...d, to: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setExportFolder(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={exportCSV} disabled={exporting} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50 flex items-center justify-center gap-2">
+                <Download size={14} /> {exporting ? 'Export...' : 'Télécharger CSV'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showNewPage && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
