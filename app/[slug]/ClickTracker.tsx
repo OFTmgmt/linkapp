@@ -25,9 +25,9 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
   }
 
   async function handleConfirm() {
-    await supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
     setShowGate(false)
     window.open(link.url, '_blank')
+    supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
   }
 
   return (
