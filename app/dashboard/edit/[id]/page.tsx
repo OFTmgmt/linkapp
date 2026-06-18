@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 
 const supabase = createClient()
 import { Page, Link } from '@/lib/types'
+import { validateSlug, validateTitle, validateBio, validateUrl, validateLinkLabel, sanitizeSlug } from '@/lib/validation'
 import { Plus, Trash2, ArrowUp, ArrowDown, ArrowLeft, Save, Upload, X } from 'lucide-react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
@@ -32,6 +33,7 @@ export default function EditPage() {
   const [links, setLinks] = useState<Link[]>([])
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bgFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,6 +108,21 @@ export default function EditPage() {
 
   async function savePage() {
     if (!page) return
+    const newErrors: Record<string, string> = {}
+    const titleErr = validateTitle(page.title)
+    const slugErr = validateSlug(page.slug)
+    const bioErr = page.bio ? validateBio(page.bio) : null
+    if (titleErr) newErrors.title = titleErr
+    if (slugErr) newErrors.slug = slugErr
+    if (bioErr) newErrors.bio = bioErr
+    links.forEach((link, i) => {
+      const labelErr = validateLinkLabel(link.label)
+      const urlErr = validateUrl(link.url)
+      if (labelErr) newErrors[`link_label_${i}`] = labelErr
+      if (urlErr) newErrors[`link_url_${i}`] = urlErr
+    })
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    setErrors({})
     setSaving(true)
     await supabase.from('pages').update({
       title: page.title,
@@ -176,9 +193,18 @@ export default function EditPage() {
           <div className="flex-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
               <h2 className="font-semibold text-gray-700">Infos générales</h2>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Titre" value={page.title} onChange={e => setPage({ ...page, title: e.target.value })} />
-              <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Slug (URL)" value={page.slug} onChange={e => setPage({ ...page, slug: e.target.value })} />
-              <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Bio (optionnel)" value={page.bio || ''} onChange={e => setPage({ ...page, bio: e.target.value })} />
+              <div>
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.title ? 'border-red-400' : ''}`} placeholder="Titre" value={page.title} onChange={e => { setPage({ ...page, title: e.target.value }); setErrors(p => ({ ...p, title: '' })) }} />
+                {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+              </div>
+              <div>
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.slug ? 'border-red-400' : ''}`} placeholder="Slug (URL)" value={page.slug} onChange={e => { setPage({ ...page, slug: sanitizeSlug(e.target.value) }); setErrors(p => ({ ...p, slug: '' })) }} />
+                {errors.slug && <p className="text-xs text-red-500 mt-1">{errors.slug}</p>}
+              </div>
+              <div>
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.bio ? 'border-red-400' : ''}`} placeholder="Bio (optionnel)" value={page.bio || ''} onChange={e => { setPage({ ...page, bio: e.target.value }); setErrors(p => ({ ...p, bio: '' })) }} />
+                {errors.bio && <p className="text-xs text-red-500 mt-1">{errors.bio}</p>}
+              </div>
 
               <div className="space-y-2">
                 <label className="text-sm text-gray-600 font-medium">Photo de profil</label>
@@ -359,14 +385,22 @@ export default function EditPage() {
               {links.length === 0 && <p className="text-center text-gray-300 text-sm py-6">Aucun lien — clique sur Ajouter</p>}
               <div className="space-y-3">
                 {links.map((link, i) => (
-                  <div key={link.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
-                      <button onClick={() => moveLink(i, 1)} className="text-gray-300 hover:text-gray-500"><ArrowDown size={14} /></button>
+                  <div key={link.id} className="p-3 bg-gray-50 rounded-lg space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
+                        <button onClick={() => moveLink(i, 1)} className="text-gray-300 hover:text-gray-500"><ArrowDown size={14} /></button>
+                      </div>
+                      <input className={`flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 ${errors[`link_label_${i}`] ? 'border-red-400' : ''}`} placeholder="Label" value={link.label} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l)); setErrors(p => ({ ...p, [`link_label_${i}`]: '' })) }} />
+                      <input className={`flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 ${errors[`link_url_${i}`] ? 'border-red-400' : ''}`} placeholder="https://..." value={link.url} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l)); setErrors(p => ({ ...p, [`link_url_${i}`]: '' })) }} />
+                      <button onClick={() => removeLink(link.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
                     </div>
-                    <input className="flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="Label" value={link.label} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l))} />
-                    <input className="flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="https://..." value={link.url} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l))} />
-                    <button onClick={() => removeLink(link.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
+                    {(errors[`link_label_${i}`] || errors[`link_url_${i}`]) && (
+                      <div className="flex gap-2 pl-8">
+                        <p className="flex-1 text-xs text-red-500">{errors[`link_label_${i}`]}</p>
+                        <p className="flex-[2] text-xs text-red-500">{errors[`link_url_${i}`]}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@
 import { Page, Link } from '@/lib/types'
 import LocationBadge from './LocationBadge'
 import ClickTracker from './ClickTracker'
+import PageViewTracker from './PageViewTracker'
 
 export default function PageContent({ page, links }: { page: Page, links: Link[] }) {
   const isGradient = page.background_color.startsWith('linear-gradient')
@@ -15,6 +16,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative" style={bgStyle}>
       {page.background_image && <div className="absolute inset-0 bg-black/40" />}
 
+      <PageViewTracker pageId={page.id} />
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-4">
         {page.avatar_url && (
           <img src={page.avatar_url} alt={page.title} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />

@@ -7,17 +7,25 @@ import AgeGate from './AgeGate'
 export default function ClickTracker({ link, page }: { link: Link, page: Page }) {
   const [showGate, setShowGate] = useState(false)
 
+  function getMeta() {
+    const ua = navigator.userAgent
+    const device = /tablet|ipad/i.test(ua) ? 'tablet' : /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop'
+    const ref = document.referrer
+    const referrer = !ref ? 'direct' : ref.includes('instagram') ? 'instagram' : ref.includes('facebook') || ref.includes('fb.com') ? 'facebook' : ref.includes('tiktok') ? 'tiktok' : 'other'
+    return { device, referrer }
+  }
+
   async function handleClick(e: React.MouseEvent) {
     if (page.age_gate) {
       e.preventDefault()
       setShowGate(true)
     } else {
-      await supabase.from('clicks').insert({ link_id: link.id })
+      await supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
     }
   }
 
   async function handleConfirm() {
-    await supabase.from('clicks').insert({ link_id: link.id })
+    await supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
     setShowGate(false)
     window.open(link.url, '_blank')
   }

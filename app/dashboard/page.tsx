@@ -2,13 +2,16 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
-import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut } from 'lucide-react'
+import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
+import { useRole } from '@/lib/useRole'
+import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
 
 export default function Dashboard() {
   const router = useRouter()
+  const { isAdmin } = useRole()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -22,6 +25,7 @@ export default function Dashboard() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [showNewPage, setShowNewPage] = useState(false)
   const [newPage, setNewPage] = useState({ title: '', slug: '', background_color: '#ff6eb4' })
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -54,18 +58,27 @@ export default function Dashboard() {
   }
 
   async function createFolder() {
-    if (!newFolderName.trim()) return
+    const err = validateFolderName(newFolderName)
+    if (err) { setErrors({ folder: err }); return }
+    setErrors({})
     await supabase.from('folders').insert({ name: newFolderName.trim() })
     setNewFolderName('')
     loadData()
   }
 
   async function createPage() {
-    if (!newPage.title.trim() || !newPage.slug.trim() || !selectedFolder) return
+    const newErrors: Record<string, string> = {}
+    const titleErr = validateTitle(newPage.title)
+    const slugErr = validateSlug(sanitizeSlug(newPage.slug))
+    if (titleErr) newErrors.pageTitle = titleErr
+    if (slugErr) newErrors.pageSlug = slugErr
+    if (!selectedFolder) newErrors.pageSlug = newErrors.pageSlug || 'Dossier requis'
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    setErrors({})
     await supabase.from('pages').insert({
       folder_id: selectedFolder,
       title: newPage.title.trim(),
-      slug: newPage.slug.trim().toLowerCase().replace(/\s+/g, '-'),
+      slug: sanitizeSlug(newPage.slug),
       background_color: newPage.background_color,
     })
     setNewPage({ title: '', slug: '', background_color: '#ff6eb4' })
@@ -118,17 +131,28 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 ml-auto mr-4">
+          <button onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 ml-auto mr-2">
+            <BarChart2 size={16} /> Stats
+          </button>
+          {isAdmin && (
+            <button onClick={() => router.push('/dashboard/admin')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 mr-2">
+              <Settings size={16} /> Admin
+            </button>
+          )}
+          <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 mr-4">
             <LogOut size={16} /> Déconnexion
           </button>
           <div className="flex gap-2">
-            <input
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              placeholder="Nom du dossier..."
-              value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && createFolder()}
-            />
+            <div className="flex flex-col gap-1">
+              <input
+                className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.folder ? 'border-red-400' : ''}`}
+                placeholder="Nom du dossier..."
+                value={newFolderName}
+                onChange={e => { setNewFolderName(e.target.value); setErrors({}) }}
+                onKeyDown={e => e.key === 'Enter' && createFolder()}
+              />
+              {errors.folder && <p className="text-xs text-red-500">{errors.folder}</p>}
+            </div>
             <button
               onClick={createFolder}
               className="bg-pink-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-pink-600 flex items-center gap-2"
@@ -216,18 +240,24 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h3 className="font-semibold text-lg mb-4">Nouvelle page</h3>
             <div className="space-y-3">
-              <input
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                placeholder="Titre (ex: Aliyah)"
-                value={newPage.title}
-                onChange={e => setNewPage({ ...newPage, title: e.target.value })}
-              />
-              <input
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                placeholder="Slug (ex: aliyah59)"
-                value={newPage.slug}
-                onChange={e => setNewPage({ ...newPage, slug: e.target.value })}
-              />
+              <div>
+                <input
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.pageTitle ? 'border-red-400' : ''}`}
+                  placeholder="Titre (ex: Aliyah)"
+                  value={newPage.title}
+                  onChange={e => { setNewPage({ ...newPage, title: e.target.value }); setErrors(p => ({ ...p, pageTitle: '' })) }}
+                />
+                {errors.pageTitle && <p className="text-xs text-red-500 mt-1">{errors.pageTitle}</p>}
+              </div>
+              <div>
+                <input
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.pageSlug ? 'border-red-400' : ''}`}
+                  placeholder="Slug (ex: aliyah59)"
+                  value={newPage.slug}
+                  onChange={e => { setNewPage({ ...newPage, slug: sanitizeSlug(e.target.value) }); setErrors(p => ({ ...p, pageSlug: '' })) }}
+                />
+                {errors.pageSlug && <p className="text-xs text-red-500 mt-1">{errors.pageSlug}</p>}
+              </div>
               <div className="flex items-center gap-3">
                 <label className="text-sm text-gray-600">Couleur fond :</label>
                 <input
