@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { Link, Page } from '@/lib/types'
 import AgeGate from './AgeGate'
 
@@ -15,19 +14,28 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
     return { device, referrer }
   }
 
+  function trackClick() {
+    const meta = getMeta()
+    fetch('/api/track-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ link_id: link.id, page_title: page.title, page_slug: page.slug, ...meta }),
+    })
+  }
+
   async function handleClick(e: React.MouseEvent) {
     if (page.age_gate) {
       e.preventDefault()
       setShowGate(true)
     } else {
-      await supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
+      trackClick()
     }
   }
 
   async function handleConfirm() {
     setShowGate(false)
     window.open(link.url, '_blank')
-    supabase.from('clicks').insert({ link_id: link.id, ...getMeta() })
+    trackClick()
   }
 
   return (
