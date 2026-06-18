@@ -4,6 +4,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-lg">
+        <img src="/logo.svg" alt="My Links Page" className="h-20 mx-auto mb-6 drop-shadow-lg" style={{ filter: 'brightness(0) invert(1)' }} />
         <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">
           My Links Page
         </h1>

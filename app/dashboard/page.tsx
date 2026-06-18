@@ -130,6 +130,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between mb-8">
+          <img src="/logo.svg" alt="My Links Page" className="h-8" />
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <button onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 ml-auto mr-2">
             <BarChart2 size={16} /> Stats
