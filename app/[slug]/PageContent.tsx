@@ -14,12 +14,14 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative" style={bgStyle}>
-      {page.background_image && <div className="absolute inset-0 bg-black/40" />}
+      {page.background_image && (
+        <div className="absolute inset-0 bg-black" style={{ opacity: (page.bg_overlay ?? 15) / 100 }} />
+      )}
 
       <PageViewTracker pageId={page.id} />
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-4">
         {page.avatar_url && (
-          <img src={page.avatar_url} alt={page.title} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />
+          <img src={page.avatar_url} alt={page.title} className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
         )}
 
         <h1 className="text-2xl font-bold text-white drop-shadow">{page.title}</h1>

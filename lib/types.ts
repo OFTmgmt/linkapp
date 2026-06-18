@@ -15,6 +15,7 @@ export type Page = {
   age_gate: boolean
   show_location: boolean
   background_image: string | null
+  bg_overlay: number | null
   button_bg: string
   button_text_color: string
   button_radius: string
@@ -30,6 +31,10 @@ export type Link = {
   url: string
   icon: string
   position: number
+  btn_size: string | null
+  btn_width: string | null
+  btn_animation: string | null
+  btn_align: string | null
   created_at: string
 }
 

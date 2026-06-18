@@ -133,6 +133,7 @@ export default function EditPage() {
       age_gate: page.age_gate,
       show_location: page.show_location,
       background_image: page.background_image,
+      bg_overlay: page.bg_overlay ?? 30,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -142,9 +143,9 @@ export default function EditPage() {
 
     for (const link of links) {
       if (link.id.startsWith('new-')) {
-        await supabase.from('links').insert({ page_id: id, label: link.label, url: link.url, icon: link.icon, position: link.position })
+        await supabase.from('links').insert({ page_id: id, label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align })
       } else {
-        await supabase.from('links').update({ label: link.label, url: link.url, icon: link.icon, position: link.position }).eq('id', link.id)
+        await supabase.from('links').update({ label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align }).eq('id', link.id)
       }
     }
     setSaving(false)
@@ -152,7 +153,7 @@ export default function EditPage() {
   }
 
   function addLink() {
-    setLinks([...links, { id: `new-${Date.now()}`, page_id: id, label: '', url: '', icon: 'link', position: links.length, created_at: '' }])
+    setLinks([...links, { id: `new-${Date.now()}`, page_id: id, label: '', url: '', icon: 'link', position: links.length, btn_size: 'medium', btn_width: 'full', btn_animation: 'none', btn_align: 'center', created_at: '' }])
   }
 
   async function removeLink(linkId: string) {
@@ -272,6 +273,15 @@ export default function EditPage() {
                   onChange={e => e.target.files?.[0] && uploadBgImage(e.target.files[0])}
                 />
               </div>
+              {page.background_image && (
+                <div className="mt-4">
+                  <label className="text-sm text-gray-600 font-medium">Assombrissement de l'image ({page.bg_overlay ?? 30}%)</label>
+                  <input type="range" min="0" max="80" step="5"
+                    value={page.bg_overlay ?? 30}
+                    onChange={e => setPage({ ...page, bg_overlay: parseInt(e.target.value) })}
+                    className="w-full accent-pink-500 mt-2" />
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -385,7 +395,7 @@ export default function EditPage() {
               {links.length === 0 && <p className="text-center text-gray-300 text-sm py-6">Aucun lien — clique sur Ajouter</p>}
               <div className="space-y-3">
                 {links.map((link, i) => (
-                  <div key={link.id} className="p-3 bg-gray-50 rounded-lg space-y-1">
+                  <div key={link.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col gap-1">
                         <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
@@ -401,6 +411,49 @@ export default function EditPage() {
                         <p className="flex-[2] text-xs text-red-500">{errors[`link_url_${i}`]}</p>
                       </div>
                     )}
+                    {/* Personnalisation du bouton */}
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Taille</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_size || 'medium'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_size: e.target.value } : l))}>
+                          <option value="small">Petit</option>
+                          <option value="medium">Moyen</option>
+                          <option value="large">Grand</option>
+                          <option value="xl">XL</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Largeur</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_width || 'full'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_width: e.target.value } : l))}>
+                          <option value="full">Pleine largeur</option>
+                          <option value="auto">Compact (centré)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Animation</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_animation || 'none'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_animation: e.target.value } : l))}>
+                          <option value="none">Aucune</option>
+                          <option value="bounce">Rebond</option>
+                          <option value="pulse">Pulse</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Alignement</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_align || 'center'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_align: e.target.value } : l))}>
+                          <option value="left">Gauche</option>
+                          <option value="center">Centre</option>
+                          <option value="right">Droite</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -412,16 +465,19 @@ export default function EditPage() {
             <div className="sticky top-6">
               <p className="text-xs text-gray-400 text-center mb-2 font-medium uppercase tracking-wide">Aperçu</p>
               <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-gray-200" style={{ height: '580px' }}>
-                <div className="w-full h-full flex flex-col items-center justify-center px-4 py-8 overflow-y-auto" style={bgStyle}>
+                <div className="w-full h-full flex flex-col items-center justify-center px-4 py-8 overflow-y-auto relative" style={bgStyle}>
+                  {page.background_image && (
+                    <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: (page.bg_overlay ?? 30) / 100 }} />
+                  )}
                   {page.avatar_url && (
-                    <img src={page.avatar_url} alt={page.title} className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg mb-4" />
+                    <img src={page.avatar_url} alt={page.title} className="relative z-10 w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mb-4 animate-bounce" style={{ animationDuration: '2s' }} />
                   )}
                   {!page.avatar_url && (
-                    <div className="w-20 h-20 rounded-full bg-white/20 mb-4" />
+                    <div className="relative z-10 w-24 h-24 rounded-full bg-white/20 mb-4" />
                   )}
-                  <h1 className="text-xl font-bold text-white drop-shadow mb-1">{page.title || 'Titre'}</h1>
-                  {page.bio && <p className="text-white/80 text-center text-xs mb-4">{page.bio}</p>}
-                  <div className="w-full space-y-2 mt-2">
+                  <h1 className="relative z-10 text-xl font-bold text-white drop-shadow mb-1">{page.title || 'Titre'}</h1>
+                  {page.bio && <p className="relative z-10 text-white/80 text-center text-xs mb-4">{page.bio}</p>}
+                  <div className="relative z-10 w-full space-y-2 mt-2">
                     {links.filter(l => l.label).map(link => (
                       <div key={link.id} className="w-full text-center text-sm font-semibold py-3 px-4"
                         style={{ background: page.button_bg, color: page.button_text_color, borderRadius: page.button_radius, border: page.button_border, boxShadow: page.button_shadow ? '0 4px 15px rgba(0,0,0,0.3)' : 'none' }}>

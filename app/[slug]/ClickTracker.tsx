@@ -38,24 +38,48 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
     trackClick()
   }
 
+  const size = link.btn_size || 'medium'
+  const width = link.btn_width || 'full'
+  const animation = link.btn_animation || 'none'
+  const align = link.btn_align || 'center'
+
+  const sizeClasses: Record<string, string> = {
+    small: 'py-2 px-4 text-sm',
+    medium: 'py-4 px-6 text-base',
+    large: 'py-5 px-8 text-lg',
+    xl: 'py-6 px-10 text-xl',
+  }
+  const animationClasses: Record<string, string> = {
+    none: '',
+    bounce: 'animate-bounce',
+    pulse: 'animate-pulse',
+    ping: 'animate-[wiggle_0.8s_ease-in-out_infinite]',
+  }
+  const widthClass = width === 'full' ? 'w-full' : 'w-auto mx-auto'
+  const alignClass = align === 'left' ? 'text-left' : align === 'right' ? 'text-right' : 'text-center'
+  const wrapClass = width === 'full' ? 'w-full' : align === 'left' ? 'flex justify-start' : align === 'right' ? 'flex justify-end' : 'flex justify-center'
+
   return (
     <>
-      <a
-        href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleClick}
-        className="block w-full text-center font-semibold py-4 px-6 transition-all"
-        style={{
-          background: page.button_bg || 'rgba(255,255,255,0.2)',
-          color: page.button_text_color || '#ffffff',
-          borderRadius: page.button_radius || '1rem',
-          border: page.button_border || 'none',
-          boxShadow: page.button_shadow ? '0 4px 15px rgba(0,0,0,0.3)' : 'none',
-        }}
-      >
-        {link.label}
-      </a>
+      <div className={wrapClass}>
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleClick}
+          className={`block font-bold transition-all ${widthClass} ${alignClass} ${sizeClasses[size] || sizeClasses.medium} ${animationClasses[animation]}`}
+          style={{
+            background: page.button_bg || 'rgba(255,255,255,0.2)',
+            color: page.button_text_color || '#ffffff',
+            borderRadius: page.button_radius || '1rem',
+            border: page.button_border || 'none',
+            boxShadow: page.button_shadow ? '0 8px 30px rgba(0,0,0,0.4)' : '0 4px 15px rgba(0,0,0,0.2)',
+            animationDuration: animation === 'bounce' ? '1.5s' : undefined,
+          }}
+        >
+          {link.label}
+        </a>
+      </div>
 
       {showGate && (
         <AgeGate
