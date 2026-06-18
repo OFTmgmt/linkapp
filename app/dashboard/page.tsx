@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2 } from 'lucide-react'
+import { Plus, FolderOpen, Link, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -217,6 +217,9 @@ export default function Dashboard() {
                             </a>
                             <a href={`/dashboard/edit/${page.id}`} className="text-gray-300 hover:text-blue-500 p-1.5" title="Modifier">
                               <Link size={16} />
+                            </a>
+                            <a href={`/dashboard/analytics/${page.id}`} className="text-gray-300 hover:text-purple-500 p-1.5" title="Stats">
+                              <LineChart size={16} />
                             </a>
                             <button onClick={() => duplicatePage(page)} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
                               <Copy size={16} />
