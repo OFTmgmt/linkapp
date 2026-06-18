@@ -114,6 +114,7 @@ export default function EditPage() {
       age_gate: page.age_gate,
       show_location: page.show_location,
       background_image: page.background_image,
+      bg_overlay: page.bg_overlay ?? 15,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -123,9 +124,9 @@ export default function EditPage() {
 
     for (const link of links) {
       if (link.id.startsWith('new-')) {
-        await supabase.from('links').insert({ page_id: id, label: link.label, url: link.url, icon: link.icon, position: link.position })
+        await supabase.from('links').insert({ page_id: id, label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align })
       } else {
-        await supabase.from('links').update({ label: link.label, url: link.url, icon: link.icon, position: link.position }).eq('id', link.id)
+        await supabase.from('links').update({ label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align }).eq('id', link.id)
       }
     }
     setSaving(false)
@@ -133,7 +134,7 @@ export default function EditPage() {
   }
 
   function addLink() {
-    setLinks([...links, { id: `new-${Date.now()}`, page_id: id, label: '', url: '', icon: 'link', position: links.length, created_at: '' }])
+    setLinks([...links, { id: `new-${Date.now()}`, page_id: id, label: '', url: '', icon: 'link', position: links.length, btn_size: 'medium', btn_width: 'full', btn_animation: 'none', btn_align: 'center', created_at: '' }])
   }
 
   async function removeLink(linkId: string) {
@@ -243,6 +244,15 @@ export default function EditPage() {
                   className="hidden"
                   onChange={e => e.target.files?.[0] && uploadBgImage(e.target.files[0])}
                 />
+                {page.background_image && (
+                  <div className="mt-4">
+                    <label className="text-sm text-gray-600 font-medium">Assombrissement ({page.bg_overlay ?? 15}%)</label>
+                    <input type="range" min="0" max="80" step="5"
+                      value={page.bg_overlay ?? 15}
+                      onChange={e => setPage({ ...page, bg_overlay: parseInt(e.target.value) })}
+                      className="w-full accent-pink-500 mt-2" />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -357,14 +367,58 @@ export default function EditPage() {
               {links.length === 0 && <p className="text-center text-gray-300 text-sm py-6">Aucun lien — clique sur Ajouter</p>}
               <div className="space-y-3">
                 {links.map((link, i) => (
-                  <div key={link.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
-                      <button onClick={() => moveLink(i, 1)} className="text-gray-300 hover:text-gray-500"><ArrowDown size={14} /></button>
+                  <div key={link.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
+                        <button onClick={() => moveLink(i, 1)} className="text-gray-300 hover:text-gray-500"><ArrowDown size={14} /></button>
+                      </div>
+                      <input className="flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="Label" value={link.label} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l))} />
+                      <input className="flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="https://..." value={link.url} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l))} />
+                      <button onClick={() => removeLink(link.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
                     </div>
-                    <input className="flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="Label" value={link.label} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l))} />
-                    <input className="flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400" placeholder="https://..." value={link.url} onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l))} />
-                    <button onClick={() => removeLink(link.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Taille</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_size || 'medium'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_size: e.target.value } : l))}>
+                          <option value="small">Petit</option>
+                          <option value="medium">Moyen</option>
+                          <option value="large">Grand</option>
+                          <option value="xl">XL</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Largeur</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_width || 'full'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_width: e.target.value } : l))}>
+                          <option value="full">Pleine largeur</option>
+                          <option value="auto">Compact (centré)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Animation</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_animation || 'none'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_animation: e.target.value } : l))}>
+                          <option value="none">Aucune</option>
+                          <option value="bounce">Rebond</option>
+                          <option value="pulse">Pulse</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Alignement</p>
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                          value={link.btn_align || 'center'}
+                          onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_align: e.target.value } : l))}>
+                          <option value="left">Gauche</option>
+                          <option value="center">Centre</option>
+                          <option value="right">Droite</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
