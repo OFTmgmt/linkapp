@@ -133,7 +133,8 @@ export default function EditPage() {
       age_gate: page.age_gate,
       show_location: page.show_location,
       background_image: page.background_image,
-      bg_overlay: page.bg_overlay ?? 30,
+      bg_overlay: page.bg_overlay ?? 15,
+      content_offset: page.content_offset ?? 0,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -275,13 +276,20 @@ export default function EditPage() {
               </div>
               {page.background_image && (
                 <div className="mt-4">
-                  <label className="text-sm text-gray-600 font-medium">Assombrissement de l'image ({page.bg_overlay ?? 30}%)</label>
+                  <label className="text-sm text-gray-600 font-medium">Assombrissement de l'image ({page.bg_overlay ?? 15}%)</label>
                   <input type="range" min="0" max="80" step="5"
-                    value={page.bg_overlay ?? 30}
+                    value={page.bg_overlay ?? 15}
                     onChange={e => setPage({ ...page, bg_overlay: parseInt(e.target.value) })}
                     className="w-full accent-pink-500 mt-2" />
                 </div>
               )}
+              <div className="mt-4">
+                <label className="text-sm text-gray-600 font-medium">Position verticale du contenu ({page.content_offset ?? 0}px)</label>
+                <input type="range" min="0" max="400" step="10"
+                  value={page.content_offset ?? 0}
+                  onChange={e => setPage({ ...page, content_offset: parseInt(e.target.value) })}
+                  className="w-full accent-pink-500 mt-2" />
+              </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -470,7 +478,7 @@ export default function EditPage() {
                     <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: (page.bg_overlay ?? 30) / 100 }} />
                   )}
                   {page.avatar_url && (
-                    <img src={page.avatar_url} alt={page.title} className="relative z-10 w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mb-4 animate-bounce" style={{ animationDuration: '2s' }} />
+                    <img src={page.avatar_url} alt={page.title} className="relative z-10 w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mb-4" />
                   )}
                   {!page.avatar_url && (
                     <div className="relative z-10 w-24 h-24 rounded-full bg-white/20 mb-4" />

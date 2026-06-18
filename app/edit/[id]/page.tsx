@@ -115,6 +115,7 @@ export default function EditPage() {
       show_location: page.show_location,
       background_image: page.background_image,
       bg_overlay: page.bg_overlay ?? 15,
+      content_offset: page.content_offset ?? 0,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -253,6 +254,13 @@ export default function EditPage() {
                       className="w-full accent-pink-500 mt-2" />
                   </div>
                 )}
+                <div className="mt-4">
+                  <label className="text-sm text-gray-600 font-medium">Position verticale du contenu ({page.content_offset ?? 0}px)</label>
+                  <input type="range" min="0" max="400" step="10"
+                    value={page.content_offset ?? 0}
+                    onChange={e => setPage({ ...page, content_offset: parseInt(e.target.value) })}
+                    className="w-full accent-pink-500 mt-2" />
+                </div>
               </div>
             </div>
 

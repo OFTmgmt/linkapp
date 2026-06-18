@@ -13,7 +13,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
     : { backgroundColor: page.background_color }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative" style={bgStyle}>
+    <div className="min-h-screen flex flex-col items-center px-4 py-12 relative" style={{ ...bgStyle, paddingTop: `${(page.content_offset ?? 0) + 48}px` }}>
       {page.background_image && (
         <div className="absolute inset-0 bg-black" style={{ opacity: (page.bg_overlay ?? 15) / 100 }} />
       )}
