@@ -116,6 +116,7 @@ export default function EditPage() {
       background_image: page.background_image,
       bg_overlay: page.bg_overlay ?? 15,
       content_offset: page.content_offset ?? 0,
+      discord_webhook: page.discord_webhook ?? null,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -364,6 +365,17 @@ export default function EditPage() {
                     <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${page.show_location ? 'translate-x-5' : 'translate-x-0.5'}`} />
                   </div>
                 </label>
+                <div className="pt-2 border-t border-gray-100">
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Webhook Discord</label>
+                  <p className="text-xs text-gray-400 mb-2">Les clics de cette page seront envoyés sur ce Discord</p>
+                  <input
+                    type="url"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    value={page.discord_webhook || ''}
+                    onChange={e => setPage({ ...page, discord_webhook: e.target.value || null })}
+                  />
+                </div>
               </div>
             </div>
 

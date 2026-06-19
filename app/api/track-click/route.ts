@@ -24,7 +24,17 @@ export async function POST(request: Request) {
 
   await supabase.from('clicks').insert({ link_id, referrer, device, country, city })
 
-  const webhook = process.env.DISCORD_WEBHOOK_URL
+  // Récupère le webhook Discord de la page si défini, sinon utilise le webhook global
+  const { data: linkData } = await supabase
+    .from('links').select('page_id').eq('id', link_id).single()
+  let pageWebhook: string | null = null
+  if (linkData?.page_id) {
+    const { data: pageData } = await supabase
+      .from('pages').select('discord_webhook').eq('id', linkData.page_id).single()
+    pageWebhook = pageData?.discord_webhook ?? null
+  }
+
+  const webhook = pageWebhook || process.env.DISCORD_WEBHOOK_URL
   if (webhook) {
     const flag = FLAG[country] ?? '🌍'
     const source = SOURCE_EMOJI[referrer] ?? '🌐'

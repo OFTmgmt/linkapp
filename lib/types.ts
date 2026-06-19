@@ -17,6 +17,7 @@ export type Page = {
   background_image: string | null
   bg_overlay: number | null
   content_offset: number | null
+  discord_webhook: string | null
   button_bg: string
   button_text_color: string
   button_radius: string
