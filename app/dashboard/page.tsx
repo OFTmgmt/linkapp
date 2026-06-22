@@ -11,7 +11,7 @@ const supabase = createClient()
 
 export default function Dashboard() {
   const router = useRouter()
-  const { isAdmin } = useRole()
+  const { isAdmin, userId, loading: roleLoading } = useRole()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -32,13 +32,19 @@ export default function Dashboard() {
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (!roleLoading && userId) loadData()
+  }, [roleLoading, userId])
 
   async function loadData() {
     setLoading(true)
-    const { data: foldersData } = await supabase.from('folders').select('*').order('created_at')
-    const { data: pagesData } = await supabase.from('pages').select('*').order('created_at')
+    let foldersQuery = supabase.from('folders').select('*').order('created_at')
+    let pagesQuery = supabase.from('pages').select('*').order('created_at')
+    if (!isAdmin && userId) {
+      foldersQuery = foldersQuery.eq('owner_id', userId)
+      pagesQuery = pagesQuery.eq('owner_id', userId)
+    }
+    const { data: foldersData } = await foldersQuery
+    const { data: pagesData } = await pagesQuery
     setFolders(foldersData || [])
     setPages(pagesData || [])
 
@@ -64,7 +70,7 @@ export default function Dashboard() {
     const err = validateFolderName(newFolderName)
     if (err) { setErrors({ folder: err }); return }
     setErrors({})
-    await supabase.from('folders').insert({ name: newFolderName.trim() })
+    await supabase.from('folders').insert({ name: newFolderName.trim(), owner_id: userId })
     setNewFolderName('')
     loadData()
   }
@@ -83,6 +89,7 @@ export default function Dashboard() {
       title: newPage.title.trim(),
       slug: sanitizeSlug(newPage.slug),
       background_color: newPage.background_color,
+      owner_id: userId,
     })
     setNewPage({ title: '', slug: '', background_color: '#ff6eb4' })
     setShowNewPage(false)
@@ -98,6 +105,7 @@ export default function Dashboard() {
       bio: page.bio,
       avatar_url: page.avatar_url,
       background_color: page.background_color,
+      owner_id: userId,
     }).select().single()
 
     if (newPageData) {
