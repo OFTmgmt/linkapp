@@ -35,7 +35,7 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
   async function handleConfirm() {
     setShowGate(false)
     trackClick()
-    window.location.href = link.url
+    window.location.href = `https://www.google.com/url?q=${encodeURIComponent(link.url)}`
   }
 
   const size = link.btn_size || 'medium'
@@ -63,7 +63,7 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
     <>
       <div className={wrapClass}>
         <a
-          href={link.url}
+          href={`https://www.google.com/url?q=${encodeURIComponent(link.url)}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleClick}
