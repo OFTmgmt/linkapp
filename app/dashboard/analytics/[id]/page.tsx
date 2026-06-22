@@ -134,18 +134,18 @@ export default function PageAnalytics() {
   const ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : '0.0'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={20} /></button>
+          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ArrowLeft size={20} /></button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">{pageTitle}</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{pageTitle}</h1>
             <p className="text-xs text-gray-400">/{pageSlug}</p>
           </div>
-          <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1">
+          <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
             {(['today', '7d', '30d'] as const).map(p => (
               <button key={p} onClick={() => setPeriod(p)}
-                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                 {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : '30 jours'}
               </button>
             ))}
@@ -163,19 +163,19 @@ export default function PageAnalytics() {
                 { label: 'Clics', value: totalClicks, color: PINK, icon: <MousePointerClick size={16}/> },
                 { label: 'CTR', value: `${ctr}%`, color: '#10b981', icon: <TrendingUp size={16}/> },
               ].map(k => (
-                <div key={k.label} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <div key={k.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm text-gray-500">{k.label}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{k.label}</p>
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${k.color}20`, color: k.color }}>{k.icon}</div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{typeof k.value === 'number' ? k.value.toLocaleString() : k.value}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{typeof k.value === 'number' ? k.value.toLocaleString() : k.value}</p>
                 </div>
               ))}
             </div>
 
             {/* Graphique */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <h2 className="font-semibold text-gray-800 mb-4">Vues & Clics dans le temps</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+              <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Vues & Clics dans le temps</h2>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={timeSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -197,17 +197,17 @@ export default function PageAnalytics() {
 
             <div className="grid grid-cols-2 gap-6">
               {/* Clics par lien */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4">Clics par lien</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Clics par lien</h2>
                 {links.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">Aucun lien</p> : (
                   <div className="space-y-3">
                     {links.map((l, i) => (
                       <div key={l.id}>
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-gray-700 truncate flex-1">#{i+1} {l.label}</span>
-                          <span className="font-bold text-gray-900 ml-2">{l.clicks}</span>
+                          <span className="text-gray-700 dark:text-gray-300 truncate flex-1">#{i+1} {l.label}</span>
+                          <span className="font-bold text-gray-900 dark:text-white ml-2">{l.clicks}</span>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: links[0].clicks > 0 ? `${Math.round((l.clicks/links[0].clicks)*100)}%` : '0%', backgroundColor: PINK }} />
                         </div>
                       </div>
@@ -217,8 +217,8 @@ export default function PageAnalytics() {
               </div>
 
               {/* Sources */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4">Sources</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Sources</h2>
                 {referrers.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">Aucune donnée</p> : (
                   <>
                     <ResponsiveContainer width="100%" height={120}>
@@ -234,9 +234,9 @@ export default function PageAnalytics() {
                         <div key={r.source} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: REF_COLORS[r.source] || '#9ca3af' }} />
-                            <span className="text-gray-700">{REFERRER_LABELS[r.source] || r.source}</span>
+                            <span className="text-gray-700 dark:text-gray-300">{REFERRER_LABELS[r.source] || r.source}</span>
                           </div>
-                          <span className="text-gray-500 text-xs">{r.pct}%</span>
+                          <span className="text-gray-500 dark:text-gray-400 text-xs">{r.pct}%</span>
                         </div>
                       ))}
                     </div>
@@ -245,17 +245,17 @@ export default function PageAnalytics() {
               </div>
 
               {/* Pays */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Globe size={16} className="text-blue-400"/>Géographie</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><Globe size={16} className="text-blue-400"/>Géographie</h2>
                 {countries.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">Aucune donnée</p> : (
                   <div className="space-y-3">
                     {countries.map(c => (
                       <div key={c.country}>
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-gray-700 truncate flex-1">{c.country}</span>
-                          <span className="text-gray-500 text-xs ml-2">{c.views}</span>
+                          <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{c.country}</span>
+                          <span className="text-gray-500 dark:text-gray-400 text-xs ml-2">{c.views}</span>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: PURPLE }} />
                         </div>
                       </div>
@@ -265,17 +265,17 @@ export default function PageAnalytics() {
               </div>
 
               {/* Appareils + Heures */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4">Appareils</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Appareils</h2>
                 {devices.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">Aucune donnée</p> : (
                   <div className="space-y-3">
                     {devices.map((d, i) => (
                       <div key={d.device}>
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="flex items-center gap-1.5 text-gray-700 capitalize">{DEVICE_ICONS[d.device]}{d.device}</span>
-                          <span className="font-semibold text-gray-900">{d.pct}%</span>
+                          <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300 capitalize">{DEVICE_ICONS[d.device]}{d.device}</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{d.pct}%</span>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${d.pct}%`, backgroundColor: [PINK, PURPLE, '#10b981'][i%3] }} />
                         </div>
                       </div>
@@ -287,8 +287,8 @@ export default function PageAnalytics() {
 
             {/* Heures de pointe */}
             {period === 'today' && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4">Heures de pointe</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Heures de pointe</h2>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={hourly} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                     <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#9ca3af' }} axisLine={false} tickLine={false} interval={3} />

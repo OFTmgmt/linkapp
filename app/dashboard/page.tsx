@@ -217,29 +217,29 @@ export default function Dashboard() {
     setExporting(false)
   }
 
-  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Chargement...</div>
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500 dark:text-gray-400">Chargement...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between mb-8">
           <img src="/logo.svg" alt="My Links Page" className="h-8" />
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <button onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 ml-auto mr-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <button onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-auto mr-2">
             <BarChart2 size={16} /> Stats
           </button>
           {isAdmin && (
-            <button onClick={() => router.push('/dashboard/admin')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 mr-2">
+            <button onClick={() => router.push('/dashboard/admin')} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 mr-2">
               <Settings size={16} /> Admin
             </button>
           )}
-          <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 mr-4">
+          <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 mr-4">
             <LogOut size={16} /> Déconnexion
           </button>
           <div className="flex gap-2">
             <div className="flex flex-col gap-1">
               <input
-                className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.folder ? 'border-red-400' : ''}`}
+                className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.folder ? 'border-red-400' : ''}`}
                 placeholder="Nom du dossier..."
                 value={newFolderName}
                 onChange={e => { setNewFolderName(e.target.value); setErrors({}) }}
@@ -267,33 +267,33 @@ export default function Dashboard() {
           {folders.map(folder => {
             const folderPages = pages.filter(p => p.folder_id === folder.id)
             return (
-              <div key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div key={folder.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-3 flex-1">
                     <FolderOpen size={20} className="text-pink-400 flex-shrink-0" />
                     {editingFolder === folder.id ? (
                       <div className="flex items-center gap-2">
                         <input
                           autoFocus
-                          className="border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          className="border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           value={editingFolderName}
                           onChange={e => setEditingFolderName(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') renameFolder(folder.id); if (e.key === 'Escape') setEditingFolder(null) }}
                         />
                         <button onClick={() => renameFolder(folder.id)} className="text-green-500 hover:text-green-600"><Check size={16} /></button>
-                        <button onClick={() => setEditingFolder(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                        <button onClick={() => setEditingFolder(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={16} /></button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <h2 className="font-semibold text-gray-800">{folder.name}</h2>
+                        <h2 className="font-semibold text-gray-800 dark:text-white">{folder.name}</h2>
                         <button onClick={() => { setEditingFolder(folder.id); setEditingFolderName(folder.name) }} className="text-gray-300 hover:text-blue-400"><Pencil size={13} /></button>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{folderPages.length} page{folderPages.length !== 1 ? 's' : ''}</span>
+                        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 px-2 py-1 rounded-full">{folderPages.length} page{folderPages.length !== 1 ? 's' : ''}</span>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {folderPages.length > 0 && (
-                      <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer hover:text-gray-600 mr-1">
+                      <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer hover:text-gray-600 dark:hover:text-gray-200 mr-1">
                         <input
                           type="checkbox"
                           checked={folderPages.every(p => selectedPages.has(p.id))}
@@ -321,9 +321,9 @@ export default function Dashboard() {
                 {folderPages.length === 0 ? (
                   <div className="px-6 py-8 text-center text-gray-300 text-sm">Aucune page dans ce dossier</div>
                 ) : (
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-gray-50 dark:divide-gray-700">
                     {folderPages.map(page => (
-                      <div key={page.id} className={`flex items-center justify-between px-6 py-4 hover:bg-gray-50 ${selectedPages.has(page.id) ? 'bg-pink-50' : ''}`}>
+                      <div key={page.id} className={`flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedPages.has(page.id) ? 'bg-pink-50 dark:bg-pink-900/20' : ''}`}>
                         <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
@@ -333,13 +333,13 @@ export default function Dashboard() {
                           />
                           <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: page.background_color }} />
                           <div>
-                            <p className="font-medium text-gray-800">{page.internal_name || page.title}</p>
+                            <p className="font-medium text-gray-800 dark:text-white">{page.internal_name || page.title}</p>
                             <p className="text-xs text-gray-400">/{page.slug}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-500">
-                            <span className="font-semibold text-gray-800">{clickCounts[page.id] || 0}</span> clics
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold text-gray-800 dark:text-white">{clickCounts[page.id] || 0}</span> clics
                           </span>
                           <div className="flex items-center gap-1">
                             <a href={`/${page.slug}`} target="_blank" className="text-gray-300 hover:text-pink-500 p-1.5" title="Voir">
@@ -377,23 +377,23 @@ export default function Dashboard() {
 
       {exportFolder !== null && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-lg mb-1">Exporter les clics</h3>
-            <p className="text-sm text-gray-400 mb-4">Dossier : <span className="text-gray-700 font-medium">{exportFolder.name}</span></p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Exporter les clics</h3>
+            <p className="text-sm text-gray-400 mb-4">Dossier : <span className="text-gray-700 dark:text-gray-300 font-medium">{exportFolder.name}</span></p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Date de début</label>
-                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Date de début</label>
+                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   value={exportDates.from} onChange={e => setExportDates(d => ({ ...d, from: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Date de fin</label>
-                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Date de fin</label>
+                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   value={exportDates.to} onChange={e => setExportDates(d => ({ ...d, to: e.target.value }))} />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setExportFolder(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={() => setExportFolder(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">Annuler</button>
               <button onClick={exportCSV} disabled={exporting} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50 flex items-center justify-center gap-2">
                 <Download size={14} /> {exporting ? 'Export...' : 'Télécharger CSV'}
               </button>
@@ -414,22 +414,22 @@ export default function Dashboard() {
 
       {duplicatingPage && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-lg mb-1">Dupliquer la page</h3>
-            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 font-medium">{duplicatingPage.internal_name || duplicatingPage.title}</span></p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Dupliquer la page</h3>
+            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 dark:text-gray-300 font-medium">{duplicatingPage.internal_name || duplicatingPage.title}</span></p>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Nombre de copies (1–30)</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nombre de copies (1–30)</label>
               <input
                 type="number"
                 min={1}
                 max={30}
                 value={duplicateCount}
                 onChange={e => setDuplicateCount(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setDuplicatingPage(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={() => setDuplicatingPage(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">Annuler</button>
               <button
                 onClick={() => duplicatePage(duplicatingPage, duplicateCount)}
                 disabled={duplicating}
@@ -444,27 +444,27 @@ export default function Dashboard() {
 
       {movingPage && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-lg mb-1">Déplacer la page</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Déplacer la page</h3>
             <p className="text-sm text-gray-400 mb-4">
-              <span className="text-gray-700 font-medium">{movingPage.title}</span> → choisir un dossier
+              <span className="text-gray-700 dark:text-gray-300 font-medium">{movingPage.title}</span> → choisir un dossier
             </p>
             <div className="space-y-2">
               {folders.filter(f => f.id !== movingPage.folder_id).map(folder => (
                 <button
                   key={folder.id}
                   onClick={() => movePage(movingPage.id, folder.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:bg-pink-50 hover:border-pink-200 text-left transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-pink-50 hover:border-pink-200 text-left transition-colors"
                 >
                   <FolderOpen size={18} className="text-pink-400 flex-shrink-0" />
-                  <span className="font-medium text-gray-700">{folder.name}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{folder.name}</span>
                 </button>
               ))}
               {folders.filter(f => f.id !== movingPage.folder_id).length === 0 && (
                 <p className="text-center text-sm text-gray-400 py-4">Aucun autre dossier disponible</p>
               )}
             </div>
-            <button onClick={() => setMovingPage(null)} className="w-full mt-4 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">
+            <button onClick={() => setMovingPage(null)} className="w-full mt-4 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">
               Annuler
             </button>
           </div>
@@ -473,12 +473,12 @@ export default function Dashboard() {
 
       {showNewPage && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="font-semibold text-lg mb-4">Nouvelle page</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="font-semibold text-lg dark:text-white mb-4">Nouvelle page</h3>
             <div className="space-y-3">
               <div>
                 <input
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.pageTitle ? 'border-red-400' : ''}`}
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.pageTitle ? 'border-red-400' : ''}`}
                   placeholder="Titre (ex: Aliyah)"
                   value={newPage.title}
                   onChange={e => { setNewPage({ ...newPage, title: e.target.value }); setErrors(p => ({ ...p, pageTitle: '' })) }}
@@ -487,7 +487,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <input
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.pageSlug ? 'border-red-400' : ''}`}
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.pageSlug ? 'border-red-400' : ''}`}
                   placeholder="Slug (ex: aliyah59)"
                   value={newPage.slug}
                   onChange={e => { setNewPage({ ...newPage, slug: sanitizeSlug(e.target.value) }); setErrors(p => ({ ...p, pageSlug: '' })) }}
@@ -495,7 +495,7 @@ export default function Dashboard() {
                 {errors.pageSlug && <p className="text-xs text-red-500 mt-1">{errors.pageSlug}</p>}
               </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600">Couleur fond :</label>
+                <label className="text-sm text-gray-600 dark:text-gray-300">Couleur fond :</label>
                 <input
                   type="color"
                   value={newPage.background_color}
@@ -507,7 +507,7 @@ export default function Dashboard() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowNewPage(false)}
-                className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600"
               >
                 Annuler
               </button>

@@ -172,7 +172,7 @@ export default function EditPage() {
     setLinks(newLinks.map((l, i) => ({ ...l, position: i })))
   }
 
-  if (!page) return <div className="flex items-center justify-center h-screen text-gray-500">Chargement...</div>
+  if (!page) return <div className="flex items-center justify-center h-screen text-gray-500 dark:text-gray-400">Chargement...</div>
 
   const isGradient = page.background_color.startsWith('linear-gradient')
   const bgStyle = page.background_image
@@ -182,11 +182,11 @@ export default function EditPage() {
     : { backgroundColor: page.background_color }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={20} /></button>
-          <h1 className="text-xl font-bold text-gray-900 flex-1">Modifier la page</h1>
+          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ArrowLeft size={20} /></button>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Modifier la page</h1>
           <button onClick={savePage} disabled={saving} className="bg-pink-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-pink-600 flex items-center gap-2 disabled:opacity-50">
             <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
           </button>
@@ -195,28 +195,28 @@ export default function EditPage() {
         <div className="flex gap-6">
           {/* Colonne gauche — édition */}
           <div className="flex-1 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-              <h2 className="font-semibold text-gray-700">Infos générales</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-300">Infos générales</h2>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Nom interne (visible uniquement dans le dashboard)</label>
-                <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Ex : Aliyah - version test" value={page.internal_name || ''} onChange={e => setPage({ ...page, internal_name: e.target.value })} />
+                <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Ex : Aliyah - version test" value={page.internal_name || ''} onChange={e => setPage({ ...page, internal_name: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Titre public (affiché sur la page)</label>
-                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.title ? 'border-red-400' : ''}`} placeholder="Titre" value={page.title} onChange={e => { setPage({ ...page, title: e.target.value }); setErrors(p => ({ ...p, title: '' })) }} />
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.title ? 'border-red-400' : ''}`} placeholder="Titre" value={page.title} onChange={e => { setPage({ ...page, title: e.target.value }); setErrors(p => ({ ...p, title: '' })) }} />
                 {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
               </div>
               <div>
-                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.slug ? 'border-red-400' : ''}`} placeholder="Slug (URL)" value={page.slug} onChange={e => { setPage({ ...page, slug: sanitizeSlug(e.target.value) }); setErrors(p => ({ ...p, slug: '' })) }} />
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.slug ? 'border-red-400' : ''}`} placeholder="Slug (URL)" value={page.slug} onChange={e => { setPage({ ...page, slug: sanitizeSlug(e.target.value) }); setErrors(p => ({ ...p, slug: '' })) }} />
                 {errors.slug && <p className="text-xs text-red-500 mt-1">{errors.slug}</p>}
               </div>
               <div>
-                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.bio ? 'border-red-400' : ''}`} placeholder="Bio (optionnel)" value={page.bio || ''} onChange={e => { setPage({ ...page, bio: e.target.value }); setErrors(p => ({ ...p, bio: '' })) }} />
+                <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors.bio ? 'border-red-400' : ''}`} placeholder="Bio (optionnel)" value={page.bio || ''} onChange={e => { setPage({ ...page, bio: e.target.value }); setErrors(p => ({ ...p, bio: '' })) }} />
                 {errors.bio && <p className="text-xs text-red-500 mt-1">{errors.bio}</p>}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-gray-600 font-medium">Photo de profil</label>
+                <label className="text-sm text-gray-600 dark:text-gray-300 font-medium">Photo de profil</label>
                 <div className="flex items-center gap-4">
                   {page.avatar_url ? (
                     <img src={page.avatar_url} alt="avatar" className="w-16 h-16 rounded-full object-cover border-2 border-pink-200" />
@@ -231,8 +231,8 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-700 mb-4">Template / Couleur de fond</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Template / Couleur de fond</h2>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {TEMPLATES.map(t => (
                   <button key={t.name} onClick={() => setPage({ ...page, background_color: t.bg })}
@@ -243,12 +243,12 @@ export default function EditPage() {
                 ))}
               </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-500">Custom :</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400">Custom :</label>
                 <input type="color" value={isGradient ? '#ff6eb4' : page.background_color} onChange={e => setPage({ ...page, background_color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border-0" />
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                <label className="text-sm text-gray-600 font-medium">Image de fond</label>
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                <label className="text-sm text-gray-600 dark:text-gray-300 font-medium">Image de fond</label>
                 <div className="flex items-center gap-3">
                   {page.background_image && (
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
@@ -261,12 +261,12 @@ export default function EditPage() {
                   <div className="flex flex-col gap-2 flex-1">
                     <button
                       onClick={() => bgFileInputRef.current?.click()}
-                      className="text-sm bg-gray-50 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2 border border-gray-200"
+                      className="text-sm bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center gap-2 border border-gray-200 dark:border-gray-600"
                     >
                       <Upload size={14} /> Importer depuis PC
                     </button>
                     <input
-                      className="text-xs border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-pink-400 text-gray-500"
+                      className="text-xs border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-pink-400 text-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
                       placeholder="Ou colle une URL..."
                       value={page.background_image || ''}
                       onChange={e => setPage({ ...page, background_image: e.target.value })}
@@ -283,7 +283,7 @@ export default function EditPage() {
               </div>
               {page.background_image && (
                 <div className="mt-4">
-                  <label className="text-sm text-gray-600 font-medium">Assombrissement de l'image ({page.bg_overlay ?? 15}%)</label>
+                  <label className="text-sm text-gray-600 dark:text-gray-300 font-medium">Assombrissement de l'image ({page.bg_overlay ?? 15}%)</label>
                   <input type="range" min="0" max="80" step="5"
                     value={page.bg_overlay ?? 15}
                     onChange={e => setPage({ ...page, bg_overlay: parseInt(e.target.value) })}
@@ -291,7 +291,7 @@ export default function EditPage() {
                 </div>
               )}
               <div className="mt-4">
-                <label className="text-sm text-gray-600 font-medium">Position verticale du contenu ({page.content_offset ?? 0}px)</label>
+                <label className="text-sm text-gray-600 dark:text-gray-300 font-medium">Position verticale du contenu ({page.content_offset ?? 0}px)</label>
                 <input type="range" min="0" max="400" step="10"
                   value={page.content_offset ?? 0}
                   onChange={e => setPage({ ...page, content_offset: parseInt(e.target.value) })}
@@ -299,12 +299,12 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-700 mb-4">Style des boutons</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Style des boutons</h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-1">Couleur fond</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Couleur fond</p>
                     <input type="color"
                       value={page.button_bg?.startsWith('rgba') ? '#ffffff' : (page.button_bg || '#ffffff')}
                       onChange={e => {
@@ -319,7 +319,7 @@ export default function EditPage() {
                       className="w-10 h-10 rounded cursor-pointer border-0" />
                   </div>
                   <div className="flex-[2]">
-                    <p className="text-xs text-gray-500 mb-1">Opacité fond ({Math.round(parseFloat(page.button_bg?.match(/[\d.]+(?=\))/)?.[0] || '1') * 100)}%)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Opacité fond ({Math.round(parseFloat(page.button_bg?.match(/[\d.]+(?=\))/)?.[0] || '1') * 100)}%)</p>
                     <input type="range" min="0" max="100" step="1"
                       value={Math.round(parseFloat(page.button_bg?.match(/[\d.]+(?=\))/)?.[0] || '1') * 100)}
                       onChange={e => {
@@ -334,33 +334,33 @@ export default function EditPage() {
                       className="w-full accent-pink-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-1">Couleur texte</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Couleur texte</p>
                     <input type="color" value={page.button_text_color || '#ffffff'} onChange={e => setPage({ ...page, button_text_color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border-0" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-1">Bordure</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bordure</p>
                     <input type="color" value={page.button_border === 'none' ? '#ffffff' : (page.button_border || '#ffffff')} onChange={e => setPage({ ...page, button_border: `2px solid ${e.target.value}` })} className="w-10 h-10 rounded cursor-pointer border-0" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Arrondi</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Arrondi</p>
                   <div className="flex gap-2">
                     {[{ label: 'Carré', val: '0' }, { label: 'Arrondi', val: '0.5rem' }, { label: 'Pill', val: '9999px' }].map(r => (
                       <button key={r.val} onClick={() => setPage({ ...page, button_radius: r.val })}
-                        className={`flex-1 py-2 text-xs font-medium border rounded-lg transition-all ${page.button_radius === r.val ? 'bg-pink-500 text-white border-pink-500' : 'text-gray-600 hover:bg-gray-50'}`}>
+                        className={`flex-1 py-2 text-xs font-medium border rounded-lg transition-all ${page.button_radius === r.val ? 'bg-pink-500 text-white border-pink-500' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600'}`}>
                         {r.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <p className="text-sm text-gray-700">Ombre portée</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Ombre portée</p>
                   <div onClick={() => setPage({ ...page, button_shadow: !page.button_shadow })} className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${page.button_shadow ? 'bg-pink-500' : 'bg-gray-200'}`}>
                     <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${page.button_shadow ? 'translate-x-5' : 'translate-x-0.5'}`} />
                   </div>
                 </label>
                 <div className="pt-2">
-                  <p className="text-xs text-gray-500 mb-2">Présets rapides</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Présets rapides</p>
                   <div className="flex gap-2 flex-wrap">
                     {[
                       { label: 'Verre', bg: 'rgba(255,255,255,0.2)', border: 'none', radius: '1rem', shadow: false, color: '#ffffff' },
@@ -369,7 +369,7 @@ export default function EditPage() {
                       { label: 'Outline', bg: 'transparent', border: '2px solid #ffffff', radius: '1rem', shadow: false, color: '#ffffff' },
                     ].map(p => (
                       <button key={p.label} onClick={() => setPage(prev => prev ? { ...prev, button_bg: p.bg, button_border: p.border, button_radius: p.radius, button_shadow: p.shadow, button_text_color: p.color } : prev)}
-                        className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-50 text-gray-600">
+                        className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 dark:border-gray-600">
                         {p.label}
                       </button>
                     ))}
@@ -378,12 +378,12 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-700 mb-4">Options</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Options</h2>
               <div className="space-y-3">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Vérification d'âge (18+)</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Vérification d'âge (18+)</p>
                     <p className="text-xs text-gray-400">Double confirmation avant d'accéder à la page</p>
                   </div>
                   <div onClick={() => setPage({ ...page, age_gate: !page.age_gate })} className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${page.age_gate ? 'bg-pink-500' : 'bg-gray-200'}`}>
@@ -392,19 +392,19 @@ export default function EditPage() {
                 </label>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Géolocalisation du visiteur</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Géolocalisation du visiteur</p>
                     <p className="text-xs text-gray-400">Affiche la ville du visiteur sur la page</p>
                   </div>
                   <div onClick={() => setPage({ ...page, show_location: !page.show_location })} className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${page.show_location ? 'bg-pink-500' : 'bg-gray-200'}`}>
                     <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${page.show_location ? 'translate-x-5' : 'translate-x-0.5'}`} />
                   </div>
                 </label>
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Webhook Discord</label>
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">Webhook Discord</label>
                   <p className="text-xs text-gray-400 mb-2">Les clics de cette page seront envoyés sur ce Discord</p>
                   <input
                     type="url"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     placeholder="https://discord.com/api/webhooks/..."
                     value={page.discord_webhook || ''}
                     onChange={e => setPage({ ...page, discord_webhook: e.target.value || null })}
@@ -413,22 +413,22 @@ export default function EditPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-gray-700">Liens</h2>
+                <h2 className="font-semibold text-gray-700 dark:text-gray-300">Liens</h2>
                 <button onClick={addLink} className="text-sm bg-pink-50 text-pink-600 px-3 py-1.5 rounded-lg hover:bg-pink-100 flex items-center gap-1"><Plus size={14} /> Ajouter</button>
               </div>
               {links.length === 0 && <p className="text-center text-gray-300 text-sm py-6">Aucun lien — clique sur Ajouter</p>}
               <div className="space-y-3">
                 {links.map((link, i) => (
-                  <div key={link.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
+                  <div key={link.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col gap-1">
                         <button onClick={() => moveLink(i, -1)} className="text-gray-300 hover:text-gray-500"><ArrowUp size={14} /></button>
                         <button onClick={() => moveLink(i, 1)} className="text-gray-300 hover:text-gray-500"><ArrowDown size={14} /></button>
                       </div>
-                      <input className={`flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 ${errors[`link_label_${i}`] ? 'border-red-400' : ''}`} placeholder="Label" value={link.label} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l)); setErrors(p => ({ ...p, [`link_label_${i}`]: '' })) }} />
-                      <input className={`flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 ${errors[`link_url_${i}`] ? 'border-red-400' : ''}`} placeholder="https://..." value={link.url} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l)); setErrors(p => ({ ...p, [`link_url_${i}`]: '' })) }} />
+                      <input className={`flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors[`link_label_${i}`] ? 'border-red-400' : ''}`} placeholder="Label" value={link.label} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, label: e.target.value } : l)); setErrors(p => ({ ...p, [`link_label_${i}`]: '' })) }} />
+                      <input className={`flex-[2] border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${errors[`link_url_${i}`] ? 'border-red-400' : ''}`} placeholder="https://..." value={link.url} onChange={e => { setLinks(links.map(l => l.id === link.id ? { ...l, url: e.target.value } : l)); setErrors(p => ({ ...p, [`link_url_${i}`]: '' })) }} />
                       <button onClick={() => removeLink(link.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
                     </div>
                     {(errors[`link_label_${i}`] || errors[`link_url_${i}`]) && (
@@ -438,10 +438,10 @@ export default function EditPage() {
                       </div>
                     )}
                     {/* Personnalisation du bouton */}
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Taille</p>
-                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           value={link.btn_size || 'medium'}
                           onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_size: e.target.value } : l))}>
                           <option value="small">Petit</option>
@@ -452,7 +452,7 @@ export default function EditPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Largeur</p>
-                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           value={link.btn_width || 'full'}
                           onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_width: e.target.value } : l))}>
                           <option value="full">Pleine largeur</option>
@@ -461,7 +461,7 @@ export default function EditPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Animation</p>
-                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           value={link.btn_animation || 'none'}
                           onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_animation: e.target.value } : l))}>
                           <option value="none">Aucune</option>
@@ -471,7 +471,7 @@ export default function EditPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">Alignement</p>
-                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white"
+                        <select className="w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           value={link.btn_align || 'center'}
                           onChange={e => setLinks(links.map(l => l.id === link.id ? { ...l, btn_align: e.target.value } : l))}>
                           <option value="left">Gauche</option>
@@ -489,8 +489,8 @@ export default function EditPage() {
           {/* Colonne droite — aperçu */}
           <div className="w-72 flex-shrink-0">
             <div className="sticky top-6">
-              <p className="text-xs text-gray-400 text-center mb-2 font-medium uppercase tracking-wide">Aperçu</p>
-              <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-gray-200" style={{ height: '580px' }}>
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-2 font-medium uppercase tracking-wide">Aperçu</p>
+              <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-gray-200 dark:border-gray-600" style={{ height: '580px' }}>
                 <div className="w-full h-full flex flex-col items-center justify-center px-4 py-8 overflow-y-auto relative" style={bgStyle}>
                   {page.background_image && (
                     <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: (page.bg_overlay ?? 30) / 100 }} />
@@ -527,16 +527,16 @@ export default function EditPage() {
       {/* Modal recadrage */}
       {cropSrc && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-lg">Recadrer la photo</h3>
-              <button onClick={() => setCropSrc(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <h3 className="font-semibold text-lg dark:text-white">Recadrer la photo</h3>
+              <button onClick={() => setCropSrc(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
             </div>
             <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} aspect={1} circularCrop>
               <img ref={imgRef} src={cropSrc} onLoad={onImageLoad} className="max-h-96 w-full object-contain" />
             </ReactCrop>
             <div className="flex gap-3 mt-4">
-              <button onClick={() => setCropSrc(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={() => setCropSrc(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">Annuler</button>
               <button onClick={applyCrop} disabled={uploading} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50">
                 {uploading ? 'Upload...' : 'Appliquer'}
               </button>

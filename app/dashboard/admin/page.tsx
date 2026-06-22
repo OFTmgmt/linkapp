@@ -109,33 +109,33 @@ export default function AdminPage() {
     return u ? (u.name || u.email) : 'Inconnu'
   }
 
-  if (roleLoading || loading) return <div className="flex items-center justify-center h-screen text-gray-500">Chargement...</div>
+  if (roleLoading || loading) return <div className="flex items-center justify-center h-screen text-gray-500 dark:text-gray-400">Chargement...</div>
   if (!isAdmin) return null
 
   const managers = users.filter(u => u.role !== 'admin')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto p-6">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={20} /></button>
-          <h1 className="text-xl font-bold text-gray-900">Gestion des comptes</h1>
+          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ArrowLeft size={20} /></button>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Gestion des comptes</h1>
         </div>
 
         {/* Créer un compte manager */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
             <Plus size={18} className="text-pink-500" /> Créer un compte manager
           </h2>
           <div className="space-y-3">
             <input
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Prénom / Nom"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
             />
             <input
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Email"
               type="email"
               value={form.email}
@@ -143,13 +143,13 @@ export default function AdminPage() {
             />
             <div className="relative">
               <input
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="Mot de passe (8 caractères min)"
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
               />
-              <button onClick={() => setShowPassword(p => !p)} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowPassword(p => !p)} className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -166,8 +166,8 @@ export default function AdminPage() {
         </div>
 
         {/* Attribution des dossiers */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h2 className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
             <UserCheck size={18} className="text-pink-500" /> Attribution des dossiers
           </h2>
           <p className="text-xs text-gray-400 mb-4">Assigne chaque dossier (et ses pages) à un manager</p>
@@ -176,16 +176,16 @@ export default function AdminPage() {
           ) : (
             <div className="space-y-2">
               {folders.map(folder => (
-                <div key={folder.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50">
+                <div key={folder.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <div className="flex items-center gap-3">
                     <FolderOpen size={16} className="text-pink-400" />
                     <div>
-                      <p className="font-medium text-gray-800 text-sm">{folder.name}</p>
+                      <p className="font-medium text-gray-800 dark:text-white text-sm">{folder.name}</p>
                       <p className="text-xs text-gray-400">{folder.page_count} page{folder.page_count !== 1 ? 's' : ''} · {getOwnerName(folder.owner_id)}</p>
                     </div>
                   </div>
                   <select
-                    className="border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white"
+                    className="border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     value={folder.owner_id || ''}
                     disabled={assigning === folder.id}
                     onChange={e => assignFolder(folder.id, e.target.value)}
@@ -204,13 +204,13 @@ export default function AdminPage() {
         </div>
 
         {/* Liste des comptes */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-semibold text-gray-700 mb-4">Comptes existants ({users.length})</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Comptes existants ({users.length})</h2>
           <div className="space-y-2">
             {users.map(u => (
-              <div key={u.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50">
+              <div key={u.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700">
                 <div>
-                  <p className="font-medium text-gray-800 text-sm">{u.name || u.email}</p>
+                  <p className="font-medium text-gray-800 dark:text-white text-sm">{u.name || u.email}</p>
                   <p className="text-xs text-gray-400">{u.email}</p>
                   <p className="text-xs text-gray-300">{folders.filter(f => f.owner_id === u.id).length} dossier(s) attribué(s)</p>
                 </div>
@@ -218,7 +218,7 @@ export default function AdminPage() {
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                     {u.role === 'admin' ? 'Admin' : 'Manager'}
                   </span>
-                  <button onClick={() => { setResetTarget(u); setNewPassword(''); setResetError(''); setResetSuccess('') }} className="text-gray-300 hover:text-blue-400" title="Changer le mot de passe">
+                  <button onClick={() => { setResetTarget(u); setNewPassword(''); setResetError(''); setResetSuccess('') }} className="text-gray-300 hover:text-blue-400 dark:text-gray-500 dark:hover:text-blue-400" title="Changer le mot de passe">
                     <KeyRound size={16} />
                   </button>
                   {u.role !== 'admin' && (
@@ -235,25 +235,25 @@ export default function AdminPage() {
 
       {resetTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-lg mb-1">Changer le mot de passe</h3>
-            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 font-medium">{resetTarget.name || resetTarget.email}</span></p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Changer le mot de passe</h3>
+            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 dark:text-gray-300 font-medium">{resetTarget.name || resetTarget.email}</span></p>
             <div className="relative">
               <input
                 type={showNewPw ? 'text' : 'password'}
                 placeholder="Nouveau mot de passe (8 min)"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
               />
-              <button type="button" onClick={() => setShowNewPw(p => !p)} className="absolute right-3 top-2.5 text-gray-400">
+              <button type="button" onClick={() => setShowNewPw(p => !p)} className="absolute right-3 top-2.5 text-gray-400 dark:text-gray-500">
                 {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
             {resetError && <p className="text-sm text-red-500 mt-2">{resetError}</p>}
             {resetSuccess && <p className="text-sm text-green-600 mt-2">{resetSuccess}</p>}
             <div className="flex gap-3 mt-4">
-              <button onClick={() => setResetTarget(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Fermer</button>
+              <button onClick={() => setResetTarget(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">Fermer</button>
               <button onClick={resetPassword} disabled={resetting} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50">
                 {resetting ? 'Mise à jour...' : 'Valider'}
               </button>
