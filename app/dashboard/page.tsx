@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link } from 'lucide-react'
+import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link, Pencil, Check, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -30,6 +30,8 @@ export default function Dashboard() {
   const [exportFolder, setExportFolder] = useState<{ id: string; name: string } | null>(null)
   const [exportDates, setExportDates] = useState({ from: new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10), to: new Date().toISOString().slice(0,10) })
   const [exporting, setExporting] = useState(false)
+  const [editingFolder, setEditingFolder] = useState<string | null>(null)
+  const [editingFolderName, setEditingFolderName] = useState('')
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -129,6 +131,14 @@ export default function Dashboard() {
     loadData()
   }
 
+  async function renameFolder(id: string) {
+    const name = editingFolderName.trim()
+    if (!name) return
+    await supabase.from('folders').update({ name }).eq('id', id)
+    setEditingFolder(null)
+    loadData()
+  }
+
   async function deleteFolder(id: string) {
     if (!confirm('Supprimer ce dossier et toutes ses pages ?')) return
     await supabase.from('folders').delete().eq('id', id)
@@ -203,10 +213,27 @@ export default function Dashboard() {
             return (
               <div key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <FolderOpen size={20} className="text-pink-400" />
-                    <h2 className="font-semibold text-gray-800">{folder.name}</h2>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{folderPages.length} page{folderPages.length !== 1 ? 's' : ''}</span>
+                  <div className="flex items-center gap-3 flex-1">
+                    <FolderOpen size={20} className="text-pink-400 flex-shrink-0" />
+                    {editingFolder === folder.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          className="border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                          value={editingFolderName}
+                          onChange={e => setEditingFolderName(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') renameFolder(folder.id); if (e.key === 'Escape') setEditingFolder(null) }}
+                        />
+                        <button onClick={() => renameFolder(folder.id)} className="text-green-500 hover:text-green-600"><Check size={16} /></button>
+                        <button onClick={() => setEditingFolder(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-semibold text-gray-800">{folder.name}</h2>
+                        <button onClick={() => { setEditingFolder(folder.id); setEditingFolderName(folder.name) }} className="text-gray-300 hover:text-blue-400"><Pencil size={13} /></button>
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{folderPages.length} page{folderPages.length !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
