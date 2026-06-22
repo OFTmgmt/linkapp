@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
@@ -14,10 +14,6 @@ export default function ResetPasswordPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    // Supabase redirects here with the session in the URL hash — it's auto-handled by the client
-  }, [])
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password.length < 8) { setError('8 caractères minimum'); return }
@@ -29,12 +25,14 @@ export default function ResetPasswordPage() {
     else { setDone(true); setTimeout(() => router.push('/dashboard'), 2000) }
   }
 
+  const inputClass = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-200 dark:border-gray-600 placeholder-gray-400"
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f9fafb', colorScheme: 'light' }}>
-      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm" style={{ backgroundColor: '#ffffff', borderColor: '#f3f4f6', color: '#111827' }}>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: '#111827' }}>Nouveau mot de passe</h1>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-gray-900">
+      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+        <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Nouveau mot de passe</h1>
         {done ? (
-          <p className="text-sm text-green-600 mt-4">Mot de passe mis à jour. Redirection...</p>
+          <p className="text-sm text-green-500 mt-4">Mot de passe mis à jour. Redirection...</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="relative">
@@ -42,8 +40,7 @@ export default function ResetPasswordPage() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="Nouveau mot de passe"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10"
-                style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light', borderColor: '#e5e7eb' }}
+                className={`${inputClass} pr-10`}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
@@ -55,8 +52,7 @@ export default function ResetPasswordPage() {
               type={showPassword ? 'text' : 'password'}
               required
               placeholder="Confirmer le mot de passe"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light', borderColor: '#e5e7eb' }}
+              className={inputClass}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
             />
