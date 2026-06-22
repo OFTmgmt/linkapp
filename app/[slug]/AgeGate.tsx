@@ -37,10 +37,10 @@ export default function AgeGate({ onConfirm, onCancel }: { onConfirm: () => void
             18+
           </div>
           <p className="font-bold text-gray-800 text-lg leading-tight">
-            {step === 1 ? 'Êtes-vous majeur ?' : 'Confirmer votre âge'}
+            {step === 1 ? 'Are you 18 or older?' : 'Confirm your age'}
           </p>
           <p className="text-gray-400 text-sm mt-1">
-            {step === 1 ? 'Cliquez pour continuer' : 'Cliquez à nouveau pour accéder'}
+            {step === 1 ? 'Click to continue' : 'Click again to access'}
           </p>
           <div className="flex justify-center gap-1 mt-4">
             <div className={`w-2 h-2 rounded-full transition-all duration-300 ${step === 1 ? 'bg-red-400 scale-125' : 'bg-gray-200'}`} />
