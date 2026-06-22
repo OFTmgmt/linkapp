@@ -103,11 +103,23 @@ export default function Dashboard() {
     const newSlug = `${page.slug}-copy-${Date.now()}`
     const { data: newPageData } = await supabase.from('pages').insert({
       folder_id: page.folder_id,
-      title: `${page.title} (copie)`,
+      title: page.title,
+      internal_name: `${page.internal_name || page.title} (copie)`,
       slug: newSlug,
       bio: page.bio,
       avatar_url: page.avatar_url,
       background_color: page.background_color,
+      background_image: page.background_image,
+      bg_overlay: page.bg_overlay,
+      content_offset: page.content_offset,
+      discord_webhook: page.discord_webhook,
+      button_bg: page.button_bg,
+      button_text_color: page.button_text_color,
+      button_radius: page.button_radius,
+      button_shadow: page.button_shadow,
+      button_border: page.button_border,
+      age_gate: page.age_gate,
+      show_location: page.show_location,
       owner_id: userId,
     }).select().single()
 
@@ -120,6 +132,10 @@ export default function Dashboard() {
           url: l.url,
           icon: l.icon,
           position: l.position,
+          btn_size: l.btn_size,
+          btn_width: l.btn_width,
+          btn_animation: l.btn_animation,
+          btn_align: l.btn_align,
         })))
       }
     }
@@ -267,7 +283,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-4">
                           <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: page.background_color }} />
                           <div>
-                            <p className="font-medium text-gray-800">{page.title}</p>
+                            <p className="font-medium text-gray-800">{page.internal_name || page.title}</p>
                             <p className="text-xs text-gray-400">/{page.slug}</p>
                           </div>
                         </div>

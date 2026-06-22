@@ -136,6 +136,7 @@ export default function EditPage() {
       bg_overlay: page.bg_overlay ?? 15,
       content_offset: page.content_offset ?? 0,
       discord_webhook: page.discord_webhook ?? null,
+      internal_name: page.internal_name ?? null,
       button_bg: page.button_bg,
       button_text_color: page.button_text_color,
       button_radius: page.button_radius,
@@ -197,6 +198,11 @@ export default function EditPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
               <h2 className="font-semibold text-gray-700">Infos générales</h2>
               <div>
+                <label className="text-xs text-gray-400 mb-1 block">Nom interne (visible uniquement dans le dashboard)</label>
+                <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="Ex : Aliyah - version test" value={page.internal_name || ''} onChange={e => setPage({ ...page, internal_name: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Titre public (affiché sur la page)</label>
                 <input className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 ${errors.title ? 'border-red-400' : ''}`} placeholder="Titre" value={page.title} onChange={e => { setPage({ ...page, title: e.target.value }); setErrors(p => ({ ...p, title: '' })) }} />
                 {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
               </div>
