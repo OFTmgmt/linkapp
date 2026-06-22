@@ -22,8 +22,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f9fafb' }}>
-      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm" style={{ backgroundColor: '#ffffff', borderColor: '#f3f4f6' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f9fafb', colorScheme: 'light' }}>
+      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm" style={{ backgroundColor: '#ffffff', borderColor: '#f3f4f6', color: '#111827' }}>
         <button onClick={() => router.push('/login')} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
           <ArrowLeft size={16} /> Retour
         </button>
@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
               required
               placeholder="Ton email"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light' }}
+              style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light', borderColor: '#e5e7eb' }}
               value={email}
               onChange={e => setEmail(e.target.value)}
             />

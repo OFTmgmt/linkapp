@@ -30,8 +30,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f9fafb' }}>
-      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm" style={{ backgroundColor: '#ffffff', borderColor: '#f3f4f6' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f9fafb', colorScheme: 'light' }}>
+      <div className="rounded-2xl shadow-sm border p-8 w-full max-w-sm" style={{ backgroundColor: '#ffffff', borderColor: '#f3f4f6', color: '#111827' }}>
         <h1 className="text-2xl font-bold mb-2" style={{ color: '#111827' }}>Nouveau mot de passe</h1>
         {done ? (
           <p className="text-sm text-green-600 mt-4">Mot de passe mis à jour. Redirection...</p>
@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
                 required
                 placeholder="Nouveau mot de passe"
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10"
-                style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light' }}
+                style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light', borderColor: '#e5e7eb' }}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
               required
               placeholder="Confirmer le mot de passe"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light' }}
+              style={{ color: '#111827', backgroundColor: '#ffffff', colorScheme: 'light', borderColor: '#e5e7eb' }}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
             />
