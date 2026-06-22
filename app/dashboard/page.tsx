@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link, Pencil, Check, X } from 'lucide-react'
+import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link, Pencil, Check, X, FolderInput } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [exporting, setExporting] = useState(false)
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
+  const [movingPage, setMovingPage] = useState<Page | null>(null)
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -136,6 +137,12 @@ export default function Dashboard() {
     if (!name) return
     await supabase.from('folders').update({ name }).eq('id', id)
     setEditingFolder(null)
+    loadData()
+  }
+
+  async function movePage(pageId: string, targetFolderId: string) {
+    await supabase.from('pages').update({ folder_id: targetFolderId }).eq('id', pageId)
+    setMovingPage(null)
     loadData()
   }
 
@@ -281,6 +288,9 @@ export default function Dashboard() {
                             <a href={`/dashboard/analytics/${page.id}`} className="text-gray-300 hover:text-purple-500 p-1.5" title="Stats">
                               <LineChart size={16} />
                             </a>
+                            <button onClick={() => setMovingPage(page)} className="text-gray-300 hover:text-orange-400 p-1.5" title="Déplacer vers un dossier">
+                              <FolderInput size={16} />
+                            </button>
                             <button onClick={() => duplicatePage(page)} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
                               <Copy size={16} />
                             </button>
@@ -322,6 +332,35 @@ export default function Dashboard() {
                 <Download size={14} /> {exporting ? 'Export...' : 'Télécharger CSV'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {movingPage && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg mb-1">Déplacer la page</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              <span className="text-gray-700 font-medium">{movingPage.title}</span> → choisir un dossier
+            </p>
+            <div className="space-y-2">
+              {folders.filter(f => f.id !== movingPage.folder_id).map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => movePage(movingPage.id, folder.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:bg-pink-50 hover:border-pink-200 text-left transition-colors"
+                >
+                  <FolderOpen size={18} className="text-pink-400 flex-shrink-0" />
+                  <span className="font-medium text-gray-700">{folder.name}</span>
+                </button>
+              ))}
+              {folders.filter(f => f.id !== movingPage.folder_id).length === 0 && (
+                <p className="text-center text-sm text-gray-400 py-4">Aucun autre dossier disponible</p>
+              )}
+            </div>
+            <button onClick={() => setMovingPage(null)} className="w-full mt-4 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">
+              Annuler
+            </button>
           </div>
         </div>
       )}
