@@ -34,8 +34,8 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
 
   async function handleConfirm() {
     setShowGate(false)
-    window.open(link.url, '_blank')
     trackClick()
+    window.location.href = link.url
   }
 
   const size = link.btn_size || 'medium'
