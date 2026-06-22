@@ -3,6 +3,7 @@ import { Page, Link } from '@/lib/types'
 import LocationBadge from './LocationBadge'
 import ClickTracker from './ClickTracker'
 import PageViewTracker from './PageViewTracker'
+import InstagramBrowserBanner from './InstagramBrowserBanner'
 
 export default function PageContent({ page, links }: { page: Page, links: Link[] }) {
   const isGradient = page.background_color.startsWith('linear-gradient')
@@ -38,6 +39,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
 
         <p className="text-white/40 text-xs mt-6">Powered by LinkApp</p>
       </div>
+      <InstagramBrowserBanner />
     </div>
   )
 }
