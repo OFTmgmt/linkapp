@@ -2,26 +2,32 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRole } from '@/lib/useRole'
-import { ArrowLeft, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
+import { createClient } from '@/lib/supabase-browser'
+import { ArrowLeft, Plus, Trash2, Eye, EyeOff, FolderOpen, UserCheck } from 'lucide-react'
+
+const supabase = createClient()
 
 type User = { id: string; email: string; name: string; role: string; created_at: string }
+type Folder = { id: string; name: string; owner_id: string | null; page_count: number }
 
 export default function AdminPage() {
   const router = useRouter()
   const { isAdmin, loading: roleLoading } = useRole()
   const [users, setUsers] = useState<User[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ email: '', password: '', name: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [creating, setCreating] = useState(false)
+  const [assigning, setAssigning] = useState<string | null>(null)
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) router.push('/dashboard')
   }, [roleLoading, isAdmin])
 
-  useEffect(() => { if (isAdmin) loadUsers() }, [isAdmin])
+  useEffect(() => { if (isAdmin) { loadUsers(); loadFolders() } }, [isAdmin])
 
   async function loadUsers() {
     setLoading(true)
@@ -29,6 +35,14 @@ export default function AdminPage() {
     const data = await res.json()
     setUsers(data.users ?? [])
     setLoading(false)
+  }
+
+  async function loadFolders() {
+    const { data: foldersData } = await supabase.from('folders').select('*').order('created_at')
+    const { data: pagesData } = await supabase.from('pages').select('id, folder_id')
+    const counts: Record<string, number> = {}
+    pagesData?.forEach(p => { counts[p.folder_id] = (counts[p.folder_id] || 0) + 1 })
+    setFolders((foldersData || []).map(f => ({ ...f, page_count: counts[f.id] || 0 })))
   }
 
   async function createUser() {
@@ -59,8 +73,24 @@ export default function AdminPage() {
     else loadUsers()
   }
 
+  async function assignFolder(folderId: string, ownerId: string) {
+    setAssigning(folderId)
+    await supabase.from('folders').update({ owner_id: ownerId }).eq('id', folderId)
+    await supabase.from('pages').update({ owner_id: ownerId }).eq('folder_id', folderId)
+    await loadFolders()
+    setAssigning(null)
+  }
+
+  function getOwnerName(ownerId: string | null) {
+    if (!ownerId) return 'Non attribué'
+    const u = users.find(u => u.id === ownerId)
+    return u ? (u.name || u.email) : 'Inconnu'
+  }
+
   if (roleLoading || loading) return <div className="flex items-center justify-center h-screen text-gray-500">Chargement...</div>
   if (!isAdmin) return null
+
+  const managers = users.filter(u => u.role !== 'admin')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,6 +143,44 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Attribution des dossiers */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+            <UserCheck size={18} className="text-pink-500" /> Attribution des dossiers
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Assigne chaque dossier (et ses pages) à un manager</p>
+          {folders.length === 0 ? (
+            <p className="text-sm text-gray-300 text-center py-4">Aucun dossier</p>
+          ) : (
+            <div className="space-y-2">
+              {folders.map(folder => (
+                <div key={folder.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <FolderOpen size={16} className="text-pink-400" />
+                    <div>
+                      <p className="font-medium text-gray-800 text-sm">{folder.name}</p>
+                      <p className="text-xs text-gray-400">{folder.page_count} page{folder.page_count !== 1 ? 's' : ''} · {getOwnerName(folder.owner_id)}</p>
+                    </div>
+                  </div>
+                  <select
+                    className="border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white"
+                    value={folder.owner_id || ''}
+                    disabled={assigning === folder.id}
+                    onChange={e => assignFolder(folder.id, e.target.value)}
+                  >
+                    <option value="" disabled>Attribuer à...</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.name || u.email} ({u.role === 'admin' ? 'Admin' : 'Manager'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Liste des comptes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="font-semibold text-gray-700 mb-4">Comptes existants ({users.length})</h2>
@@ -122,6 +190,7 @@ export default function AdminPage() {
                 <div>
                   <p className="font-medium text-gray-800 text-sm">{u.name || u.email}</p>
                   <p className="text-xs text-gray-400">{u.email}</p>
+                  <p className="text-xs text-gray-300">{folders.filter(f => f.owner_id === u.id).length} dossier(s) attribué(s)</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
