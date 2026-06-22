@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRole } from '@/lib/useRole'
 import { createClient } from '@/lib/supabase-browser'
-import { ArrowLeft, Plus, Trash2, Eye, EyeOff, FolderOpen, UserCheck } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, EyeOff, FolderOpen, UserCheck, KeyRound } from 'lucide-react'
 
 const supabase = createClient()
 
@@ -22,6 +22,12 @@ export default function AdminPage() {
   const [success, setSuccess] = useState('')
   const [creating, setCreating] = useState(false)
   const [assigning, setAssigning] = useState<string | null>(null)
+  const [resetTarget, setResetTarget] = useState<User | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetSuccess, setResetSuccess] = useState('')
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) router.push('/dashboard')
@@ -71,6 +77,22 @@ export default function AdminPage() {
     const data = await res.json()
     if (data.error) alert(data.error)
     else loadUsers()
+  }
+
+  async function resetPassword() {
+    setResetError(''); setResetSuccess('')
+    if (!newPassword || newPassword.length < 8) { setResetError('8 caractères minimum'); return }
+    if (!resetTarget) return
+    setResetting(true)
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: resetTarget.id, newPassword }),
+    })
+    const data = await res.json()
+    if (data.error) { setResetError(data.error) }
+    else { setResetSuccess('Mot de passe mis à jour !'); setNewPassword('') }
+    setResetting(false)
   }
 
   async function assignFolder(folderId: string, ownerId: string) {
@@ -196,6 +218,9 @@ export default function AdminPage() {
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                     {u.role === 'admin' ? 'Admin' : 'Manager'}
                   </span>
+                  <button onClick={() => { setResetTarget(u); setNewPassword(''); setResetError(''); setResetSuccess('') }} className="text-gray-300 hover:text-blue-400" title="Changer le mot de passe">
+                    <KeyRound size={16} />
+                  </button>
                   {u.role !== 'admin' && (
                     <button onClick={() => deleteUser(u.id, u.email)} className="text-gray-300 hover:text-red-400">
                       <Trash2 size={16} />
@@ -207,6 +232,35 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {resetTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg mb-1">Changer le mot de passe</h3>
+            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 font-medium">{resetTarget.name || resetTarget.email}</span></p>
+            <div className="relative">
+              <input
+                type={showNewPw ? 'text' : 'password'}
+                placeholder="Nouveau mot de passe (8 min)"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 pr-10"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+              />
+              <button type="button" onClick={() => setShowNewPw(p => !p)} className="absolute right-3 top-2.5 text-gray-400">
+                {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {resetError && <p className="text-sm text-red-500 mt-2">{resetError}</p>}
+            {resetSuccess && <p className="text-sm text-green-600 mt-2">{resetSuccess}</p>}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setResetTarget(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Fermer</button>
+              <button onClick={resetPassword} disabled={resetting} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50">
+                {resetting ? 'Mise à jour...' : 'Valider'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
