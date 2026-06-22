@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [duplicatingPage, setDuplicatingPage] = useState<Page | null>(null)
   const [duplicateCount, setDuplicateCount] = useState(1)
   const [duplicating, setDuplicating] = useState(false)
+  const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -155,6 +156,31 @@ export default function Dashboard() {
     loadData()
   }
 
+  function toggleSelect(id: string) {
+    setSelectedPages(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll(pageIds: string[]) {
+    const allSelected = pageIds.every(id => selectedPages.has(id))
+    setSelectedPages(prev => {
+      const next = new Set(prev)
+      if (allSelected) pageIds.forEach(id => next.delete(id))
+      else pageIds.forEach(id => next.add(id))
+      return next
+    })
+  }
+
+  async function deleteSelected() {
+    if (!confirm(`Supprimer ${selectedPages.size} page${selectedPages.size > 1 ? 's' : ''} ?`)) return
+    await supabase.from('pages').delete().in('id', [...selectedPages])
+    setSelectedPages(new Set())
+    loadData()
+  }
+
   async function renameFolder(id: string) {
     const name = editingFolderName.trim()
     if (!name) return
@@ -266,6 +292,17 @@ export default function Dashboard() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {folderPages.length > 0 && (
+                      <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer hover:text-gray-600 mr-1">
+                        <input
+                          type="checkbox"
+                          checked={folderPages.every(p => selectedPages.has(p.id))}
+                          onChange={() => toggleSelectAll(folderPages.map(p => p.id))}
+                          className="accent-pink-500"
+                        />
+                        Tout
+                      </label>
+                    )}
                     <button
                       onClick={() => { setSelectedFolder(folder.id); setShowNewPage(true) }}
                       className="text-sm bg-pink-50 text-pink-600 px-3 py-1.5 rounded-lg hover:bg-pink-100 flex items-center gap-1"
@@ -286,8 +323,14 @@ export default function Dashboard() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {folderPages.map(page => (
-                      <div key={page.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50">
+                      <div key={page.id} className={`flex items-center justify-between px-6 py-4 hover:bg-gray-50 ${selectedPages.has(page.id) ? 'bg-pink-50' : ''}`}>
                         <div className="flex items-center gap-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedPages.has(page.id)}
+                            onChange={() => toggleSelect(page.id)}
+                            className="accent-pink-500 flex-shrink-0"
+                          />
                           <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: page.background_color }} />
                           <div>
                             <p className="font-medium text-gray-800">{page.internal_name || page.title}</p>
@@ -356,6 +399,16 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {selectedPages.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-2xl px-6 py-3 shadow-2xl flex items-center gap-4">
+          <span className="text-sm font-medium">{selectedPages.size} page{selectedPages.size > 1 ? 's' : ''} sélectionnée{selectedPages.size > 1 ? 's' : ''}</span>
+          <button onClick={() => setSelectedPages(new Set())} className="text-gray-400 hover:text-white text-sm">Annuler</button>
+          <button onClick={deleteSelected} className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+            <Trash2 size={14} /> Supprimer
+          </button>
         </div>
       )}
 
