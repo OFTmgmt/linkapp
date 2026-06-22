@@ -33,6 +33,9 @@ export default function Dashboard() {
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
   const [movingPage, setMovingPage] = useState<Page | null>(null)
+  const [duplicatingPage, setDuplicatingPage] = useState<Page | null>(null)
+  const [duplicateCount, setDuplicateCount] = useState(1)
+  const [duplicating, setDuplicating] = useState(false)
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -99,33 +102,34 @@ export default function Dashboard() {
     loadData()
   }
 
-  async function duplicatePage(page: Page) {
-    const newSlug = `${page.slug}-copy-${Date.now()}`
-    const { data: newPageData } = await supabase.from('pages').insert({
-      folder_id: page.folder_id,
-      title: page.title,
-      internal_name: `${page.internal_name || page.title} (copie)`,
-      slug: newSlug,
-      bio: page.bio,
-      avatar_url: page.avatar_url,
-      background_color: page.background_color,
-      background_image: page.background_image,
-      bg_overlay: page.bg_overlay,
-      content_offset: page.content_offset,
-      discord_webhook: page.discord_webhook,
-      button_bg: page.button_bg,
-      button_text_color: page.button_text_color,
-      button_radius: page.button_radius,
-      button_shadow: page.button_shadow,
-      button_border: page.button_border,
-      age_gate: page.age_gate,
-      show_location: page.show_location,
-      owner_id: userId,
-    }).select().single()
-
-    if (newPageData) {
-      const { data: links } = await supabase.from('links').select('*').eq('page_id', page.id)
-      if (links && links.length > 0) {
+  async function duplicatePage(page: Page, count: number) {
+    setDuplicating(true)
+    const { data: links } = await supabase.from('links').select('*').eq('page_id', page.id)
+    for (let i = 0; i < count; i++) {
+      const suffix = count > 1 ? ` (copie ${i + 1})` : ' (copie)'
+      const newSlug = `${page.slug}-copy-${Date.now()}-${i}`
+      const { data: newPageData } = await supabase.from('pages').insert({
+        folder_id: page.folder_id,
+        title: page.title,
+        internal_name: `${page.internal_name || page.title}${suffix}`,
+        slug: newSlug,
+        bio: page.bio,
+        avatar_url: page.avatar_url,
+        background_color: page.background_color,
+        background_image: page.background_image,
+        bg_overlay: page.bg_overlay,
+        content_offset: page.content_offset,
+        discord_webhook: page.discord_webhook,
+        button_bg: page.button_bg,
+        button_text_color: page.button_text_color,
+        button_radius: page.button_radius,
+        button_shadow: page.button_shadow,
+        button_border: page.button_border,
+        age_gate: page.age_gate,
+        show_location: page.show_location,
+        owner_id: userId,
+      }).select().single()
+      if (newPageData && links && links.length > 0) {
         await supabase.from('links').insert(links.map(l => ({
           page_id: newPageData.id,
           label: l.label,
@@ -139,6 +143,9 @@ export default function Dashboard() {
         })))
       }
     }
+    setDuplicating(false)
+    setDuplicatingPage(null)
+    setDuplicateCount(1)
     loadData()
   }
 
@@ -307,7 +314,7 @@ export default function Dashboard() {
                             <button onClick={() => setMovingPage(page)} className="text-gray-300 hover:text-orange-400 p-1.5" title="Déplacer vers un dossier">
                               <FolderInput size={16} />
                             </button>
-                            <button onClick={() => duplicatePage(page)} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
+                            <button onClick={() => { setDuplicatingPage(page); setDuplicateCount(1) }} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
                               <Copy size={16} />
                             </button>
                             <button onClick={() => deletePage(page.id)} className="text-gray-300 hover:text-red-400 p-1.5" title="Supprimer">
@@ -346,6 +353,36 @@ export default function Dashboard() {
               <button onClick={() => setExportFolder(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
               <button onClick={exportCSV} disabled={exporting} className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50 flex items-center justify-center gap-2">
                 <Download size={14} /> {exporting ? 'Export...' : 'Télécharger CSV'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {duplicatingPage && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-lg mb-1">Dupliquer la page</h3>
+            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 font-medium">{duplicatingPage.internal_name || duplicatingPage.title}</span></p>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Nombre de copies (1–30)</label>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={duplicateCount}
+                onChange={e => setDuplicateCount(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+              />
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setDuplicatingPage(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button
+                onClick={() => duplicatePage(duplicatingPage, duplicateCount)}
+                disabled={duplicating}
+                className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Copy size={14} /> {duplicating ? 'Création...' : `Créer ${duplicateCount} copie${duplicateCount > 1 ? 's' : ''}`}
               </button>
             </div>
           </div>
