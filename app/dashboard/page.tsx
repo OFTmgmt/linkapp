@@ -74,8 +74,10 @@ export default function Dashboard() {
       }
       setClickCounts(counts)
 
+      const ownedPageIds = pagesData.filter(p => p.owner_id === userId).map(p => p.id)
+      const statsIds = ownedPageIds.length > 0 ? ownedPageIds : pageIds
       const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: viewsData } = await supabase.from('page_views').select('country').in('page_id', pageIds).gte('created_at', since30d)
+      const { data: viewsData } = await supabase.from('page_views').select('country').in('page_id', statsIds).gte('created_at', since30d)
       const countryCounts: Record<string, number> = {}
       viewsData?.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1 })
       setCountryStats(countryCounts)
