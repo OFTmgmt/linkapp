@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [duplicateCount, setDuplicateCount] = useState(1)
   const [duplicating, setDuplicating] = useState(false)
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
-  const [referrerStats, setReferrerStats] = useState<Record<string, number>>({})
+  const [countryStats, setCountryStats] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -75,10 +75,10 @@ export default function Dashboard() {
       setClickCounts(counts)
 
       const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: viewsData } = await supabase.from('page_views').select('referrer').in('page_id', pageIds).gte('created_at', since30d)
-      const refCounts: Record<string, number> = {}
-      viewsData?.forEach(v => { if (v.referrer) refCounts[v.referrer] = (refCounts[v.referrer] || 0) + 1 })
-      setReferrerStats(refCounts)
+      const { data: viewsData } = await supabase.from('page_views').select('country').in('page_id', pageIds).gte('created_at', since30d)
+      const countryCounts: Record<string, number> = {}
+      viewsData?.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1 })
+      setCountryStats(countryCounts)
     }
     setLoading(false)
   }
@@ -267,14 +267,12 @@ export default function Dashboard() {
         </div>
 
         {folders.length > 0 && (() => {
-          const REF_LABELS: Record<string, string> = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', direct: 'Direct', other: 'Autre', twitter: 'Twitter/X', snapchat: 'Snapchat' }
-          const REF_COLORS: Record<string, string> = { instagram: '#e1306c', facebook: '#1877f2', tiktok: '#374151', direct: '#6b7280', other: '#9ca3af', twitter: '#1da1f2', snapchat: '#facc15' }
           const MEDALS = ['🥇', '🥈', '🥉']
           const ranked = [...folders]
             .map(f => ({ folder: f, total: pages.filter(p => p.folder_id === f.id).reduce((s, p) => s + (clickCounts[p.id] || 0), 0) }))
             .sort((a, b) => b.total - a.total)
-          const refTotal = Object.values(referrerStats).reduce((a, b) => a + b, 0) || 1
-          const topRefs = Object.entries(referrerStats).sort((a, b) => b[1] - a[1]).slice(0, 5)
+          const countryTotal = Object.values(countryStats).reduce((a, b) => a + b, 0) || 1
+          const topCountries = Object.entries(countryStats).sort((a, b) => b[1] - a[1]).slice(0, 6)
           return (
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
@@ -292,21 +290,21 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">📊 Sources de trafic <span className="text-xs font-normal text-gray-400">(30 jours)</span></h2>
-                {topRefs.length === 0 ? (
+                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🌍 Pays <span className="text-xs font-normal text-gray-400">(30 jours)</span></h2>
+                {topCountries.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-4">Aucune donnée</p>
                 ) : (
                   <div className="space-y-2">
-                    {topRefs.map(([source, count]) => {
-                      const pct = Math.round((count / refTotal) * 100)
+                    {topCountries.map(([country, count]) => {
+                      const pct = Math.round((count / countryTotal) * 100)
                       return (
-                        <div key={source}>
+                        <div key={country}>
                           <div className="flex justify-between text-xs mb-0.5">
-                            <span className="text-gray-600 dark:text-gray-400">{REF_LABELS[source] || source}</span>
-                            <span className="font-semibold text-gray-800 dark:text-white">{pct}%</span>
+                            <span className="text-gray-600 dark:text-gray-400">{country}</span>
+                            <span className="font-semibold text-gray-800 dark:text-white">{count} <span className="font-normal text-gray-400">({pct}%)</span></span>
                           </div>
                           <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: REF_COLORS[source] || '#9ca3af' }} />
+                            <div className="h-full rounded-full transition-all bg-pink-400" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       )
