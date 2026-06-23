@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [duplicateCount, setDuplicateCount] = useState(1)
   const [duplicating, setDuplicating] = useState(false)
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
+  const [referrerStats, setReferrerStats] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -57,18 +58,27 @@ export default function Dashboard() {
 
     if (pagesData && pagesData.length > 0) {
       const pageIds = pagesData.map(p => p.id)
+      const counts: Record<string, number> = {}
+      pagesData.forEach(p => { counts[p.id] = 0 })
+
       const { data: linksData } = await supabase.from('links').select('id, page_id').in('page_id', pageIds)
       if (linksData && linksData.length > 0) {
+        const linkToPage: Record<string, string> = {}
+        linksData.forEach(l => { linkToPage[l.id] = l.page_id })
         const linkIds = linksData.map(l => l.id)
         const { data: clicksData } = await supabase.from('clicks').select('link_id').in('link_id', linkIds)
-        const counts: Record<string, number> = {}
-        pagesData.forEach(p => { counts[p.id] = 0 })
         clicksData?.forEach(c => {
-          const link = linksData.find(l => l.id === c.link_id)
-          if (link) counts[link.page_id] = (counts[link.page_id] || 0) + 1
+          const pid = linkToPage[c.link_id]
+          if (pid) counts[pid] = (counts[pid] || 0) + 1
         })
-        setClickCounts(counts)
       }
+      setClickCounts(counts)
+
+      const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const { data: viewsData } = await supabase.from('page_views').select('referrer').in('page_id', pageIds).gte('created_at', since30d)
+      const refCounts: Record<string, number> = {}
+      viewsData?.forEach(v => { if (v.referrer) refCounts[v.referrer] = (refCounts[v.referrer] || 0) + 1 })
+      setReferrerStats(refCounts)
     }
     setLoading(false)
   }
@@ -255,6 +265,58 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {folders.length > 0 && (() => {
+          const REF_LABELS: Record<string, string> = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', direct: 'Direct', other: 'Autre', twitter: 'Twitter/X', snapchat: 'Snapchat' }
+          const REF_COLORS: Record<string, string> = { instagram: '#e1306c', facebook: '#1877f2', tiktok: '#374151', direct: '#6b7280', other: '#9ca3af', twitter: '#1da1f2', snapchat: '#facc15' }
+          const MEDALS = ['🥇', '🥈', '🥉']
+          const ranked = [...folders]
+            .map(f => ({ folder: f, total: pages.filter(p => p.folder_id === f.id).reduce((s, p) => s + (clickCounts[p.id] || 0), 0) }))
+            .sort((a, b) => b.total - a.total)
+          const refTotal = Object.values(referrerStats).reduce((a, b) => a + b, 0) || 1
+          const topRefs = Object.entries(referrerStats).sort((a, b) => b[1] - a[1]).slice(0, 5)
+          return (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
+                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🏆 Classement des dossiers</h2>
+                <div className="space-y-2">
+                  {ranked.map(({ folder, total }, i) => (
+                    <div key={folder.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 text-center flex-shrink-0">{i < 3 ? MEDALS[i] : <span className="text-xs text-gray-400 font-bold">{i + 1}.</span>}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white ml-2 flex-shrink-0">{total} clics</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
+                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">📊 Sources de trafic <span className="text-xs font-normal text-gray-400">(30 jours)</span></h2>
+                {topRefs.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">Aucune donnée</p>
+                ) : (
+                  <div className="space-y-2">
+                    {topRefs.map(([source, count]) => {
+                      const pct = Math.round((count / refTotal) * 100)
+                      return (
+                        <div key={source}>
+                          <div className="flex justify-between text-xs mb-0.5">
+                            <span className="text-gray-600 dark:text-gray-400">{REF_LABELS[source] || source}</span>
+                            <span className="font-semibold text-gray-800 dark:text-white">{pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: REF_COLORS[source] || '#9ca3af' }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {folders.length === 0 && (
           <div className="text-center py-20 text-gray-400">

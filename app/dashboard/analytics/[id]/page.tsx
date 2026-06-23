@@ -28,7 +28,10 @@ export default function PageAnalytics() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<'today' | '7d' | '30d'>('7d')
+  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d')
+  const [customFrom, setCustomFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+  const [customTo, setCustomTo] = useState(new Date().toISOString().slice(0, 10))
+  const [appliedDates, setAppliedDates] = useState({ from: customFrom, to: customTo })
   const [pageTitle, setPageTitle] = useState('')
   const [pageSlug, setPageSlug] = useState('')
   const [totalViews, setTotalViews] = useState(0)
@@ -40,18 +43,25 @@ export default function PageAnalytics() {
   const [hourly, setHourly] = useState<{ hour: string; views: number }[]>([])
   const [links, setLinks] = useState<{ id: string; label: string; clicks: number }[]>([])
 
-  useEffect(() => { loadStats() }, [id, period])
+  useEffect(() => { loadStats() }, [id, period, appliedDates])
 
-  function getPeriodStart() {
+  function getPeriodStart(): string {
+    if (period === 'custom') return new Date(appliedDates.from + 'T00:00:00').toISOString()
     const now = new Date()
     if (period === 'today') { now.setHours(0,0,0,0); return now.toISOString() }
     if (period === '7d') { now.setDate(now.getDate() - 7); return now.toISOString() }
     now.setDate(now.getDate() - 30); return now.toISOString()
   }
 
+  function getPeriodEnd(): string {
+    if (period === 'custom') return new Date(appliedDates.to + 'T23:59:59').toISOString()
+    return new Date().toISOString()
+  }
+
   async function loadStats() {
     setLoading(true)
     const since = getPeriodStart()
+    const until = getPeriodEnd()
 
     const [{ data: pageData }, { data: linksData }] = await Promise.all([
       supabase.from('pages').select('title, slug').eq('id', id).single(),
@@ -63,9 +73,9 @@ export default function PageAnalytics() {
     const linkIds = linksData?.map(l => l.id) || []
 
     const [{ data: viewsData }, { data: clicksData }] = await Promise.all([
-      supabase.from('page_views').select('country, referrer, device, created_at').eq('page_id', id).gte('created_at', since),
+      supabase.from('page_views').select('country, referrer, device, created_at').eq('page_id', id).gte('created_at', since).lte('created_at', until),
       linkIds.length > 0
-        ? supabase.from('clicks').select('link_id, created_at').in('link_id', linkIds).gte('created_at', since)
+        ? supabase.from('clicks').select('link_id, created_at').in('link_id', linkIds).gte('created_at', since).lte('created_at', until)
         : Promise.resolve({ data: [] }),
     ])
 
@@ -86,6 +96,13 @@ export default function PageAnalytics() {
       for (let h = 0; h < 24; h++) buckets[`${h}h`] = { views: 0, clicks: 0 }
       views.forEach(v => { const h = new Date(v.created_at).getHours(); buckets[`${h}h`].views++ })
       clicks.forEach(c => { const h = new Date(c.created_at).getHours(); buckets[`${h}h`].clicks++ })
+    } else if (period === 'custom') {
+      for (let d = new Date(appliedDates.from); d <= new Date(appliedDates.to); d.setDate(d.getDate() + 1)) {
+        const key = new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+        buckets[key] = { views: 0, clicks: 0 }
+      }
+      views.forEach(v => { const key = new Date(v.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); if (buckets[key]) buckets[key].views++ })
+      clicks.forEach(c => { const key = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); if (buckets[key]) buckets[key].clicks++ })
     } else {
       const days = period === '7d' ? 7 : 30
       for (let i = days - 1; i >= 0; i--) {
@@ -142,13 +159,28 @@ export default function PageAnalytics() {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{pageTitle}</h1>
             <p className="text-xs text-gray-400">/{pageSlug}</p>
           </div>
-          <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
-            {(['today', '7d', '30d'] as const).map(p => (
-              <button key={p} onClick={() => setPeriod(p)}
-                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : '30 jours'}
-              </button>
-            ))}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
+              {(['today', '7d', '30d', 'custom'] as const).map(p => (
+                <button key={p} onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                  {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
+                </button>
+              ))}
+            </div>
+            {period === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                <span className="text-xs text-gray-400">→</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                <button onClick={() => setAppliedDates({ from: customFrom, to: customTo })}
+                  className="bg-pink-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-pink-600">
+                  Appliquer
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

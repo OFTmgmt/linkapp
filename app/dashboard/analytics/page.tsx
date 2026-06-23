@@ -33,7 +33,10 @@ const PURPLE = '#8b5cf6'
 export default function AnalyticsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<'today' | '7d' | '30d'>('7d')
+  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d')
+  const [customFrom, setCustomFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+  const [customTo, setCustomTo] = useState(new Date().toISOString().slice(0, 10))
+  const [appliedDates, setAppliedDates] = useState({ from: customFrom, to: customTo })
   const [totalViews, setTotalViews] = useState(0)
   const [totalClicks, setTotalClicks] = useState(0)
   const [prevViews, setPrevViews] = useState(0)
@@ -45,9 +48,10 @@ export default function AnalyticsPage() {
   const [devices, setDevices] = useState<DeviceStat[]>([])
   const [hourly, setHourly] = useState<{ hour: string; views: number }[]>([])
 
-  useEffect(() => { loadStats() }, [period])
+  useEffect(() => { loadStats() }, [period, appliedDates])
 
-  function getPeriodStart(offset = 0) {
+  function getPeriodStart(offset = 0): string {
+    if (period === 'custom') return new Date(appliedDates.from + 'T00:00:00').toISOString()
     const now = new Date()
     if (period === 'today') {
       const d = new Date(now); d.setDate(d.getDate() - offset); d.setHours(0,0,0,0); return d.toISOString()
@@ -56,17 +60,23 @@ export default function AnalyticsPage() {
     now.setDate(now.getDate() - 30 * (offset + 1)); return now.toISOString()
   }
 
+  function getPeriodEnd(): string {
+    if (period === 'custom') return new Date(appliedDates.to + 'T23:59:59').toISOString()
+    return new Date().toISOString()
+  }
+
   async function loadStats() {
     setLoading(true)
     const since = getPeriodStart(0)
-    const prevSince = getPeriodStart(1)
+    const until = getPeriodEnd()
+    const prevSince = period !== 'custom' ? getPeriodStart(1) : since
 
     const [{ data: pagesData }, { data: viewsData }, { data: prevViewsData }, { data: clicksData }, { data: prevClicksData }, { data: linksData }] = await Promise.all([
       supabase.from('pages').select('id, title, slug'),
-      supabase.from('page_views').select('page_id, country, referrer, device, created_at').gte('created_at', since),
-      supabase.from('page_views').select('id').gte('created_at', prevSince).lt('created_at', since),
-      supabase.from('clicks').select('link_id, referrer, device, created_at').gte('created_at', since),
-      supabase.from('clicks').select('id').gte('created_at', prevSince).lt('created_at', since),
+      supabase.from('page_views').select('page_id, country, referrer, device, created_at').gte('created_at', since).lte('created_at', until),
+      period !== 'custom' ? supabase.from('page_views').select('id').gte('created_at', prevSince).lt('created_at', since) : Promise.resolve({ data: [] }),
+      supabase.from('clicks').select('link_id, referrer, device, created_at').gte('created_at', since).lte('created_at', until),
+      period !== 'custom' ? supabase.from('clicks').select('id').gte('created_at', prevSince).lt('created_at', since) : Promise.resolve({ data: [] }),
       supabase.from('links').select('id, page_id'),
     ])
 
@@ -86,6 +96,13 @@ export default function AnalyticsPage() {
       for (let h = 0; h < 24; h++) buckets[`${h}h`] = { views: 0, clicks: 0 }
       views.forEach(v => { const h = new Date(v.created_at).getHours(); buckets[`${h}h`].views++ })
       clicks.forEach(c => { const h = new Date(c.created_at).getHours(); buckets[`${h}h`].clicks++ })
+    } else if (period === 'custom') {
+      for (let d = new Date(appliedDates.from); d <= new Date(appliedDates.to); d.setDate(d.getDate() + 1)) {
+        const key = new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+        buckets[key] = { views: 0, clicks: 0 }
+      }
+      views.forEach(v => { const key = new Date(v.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); if (buckets[key]) buckets[key].views++ })
+      clicks.forEach(c => { const key = new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); if (buckets[key]) buckets[key].clicks++ })
     } else {
       const days = period === '7d' ? 7 : 30
       for (let i = days - 1; i >= 0; i--) {
@@ -177,13 +194,28 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-4 mb-6">
           <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><ArrowLeft size={20} /></button>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Analytics</h1>
-          <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
-            {(['today', '7d', '30d'] as const).map(p => (
-              <button key={p} onClick={() => setPeriod(p)}
-                className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : '30 jours'}
-              </button>
-            ))}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
+              {(['today', '7d', '30d', 'custom'] as const).map(p => (
+                <button key={p} onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                  {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
+                </button>
+              ))}
+            </div>
+            {period === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                <span className="text-xs text-gray-400">→</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                <button onClick={() => setAppliedDates({ from: customFrom, to: customTo })}
+                  className="bg-pink-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-pink-600">
+                  Appliquer
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
