@@ -41,46 +41,55 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
-  }, [roleLoading, userId])
+  }, [roleLoading, userId, isAdmin])
 
   async function loadData() {
     setLoading(true)
-    let foldersQuery = supabase.from('folders').select('*').order('created_at')
-    let pagesQuery = supabase.from('pages').select('*').order('created_at')
-    if (!isAdmin && userId) {
-      foldersQuery = foldersQuery.eq('owner_id', userId)
-      pagesQuery = pagesQuery.eq('owner_id', userId)
-    }
-    const { data: foldersData } = await foldersQuery
-    const { data: pagesData } = await pagesQuery
-    setFolders(foldersData || [])
-    setPages(pagesData || [])
-
-    if (pagesData && pagesData.length > 0) {
-      const pageIds = pagesData.map(p => p.id)
-      const counts: Record<string, number> = {}
-      pagesData.forEach(p => { counts[p.id] = 0 })
-
-      const { data: linksData } = await supabase.from('links').select('id, page_id').in('page_id', pageIds)
-      if (linksData && linksData.length > 0) {
-        const linkToPage: Record<string, string> = {}
-        linksData.forEach(l => { linkToPage[l.id] = l.page_id })
-        const linkIds = linksData.map(l => l.id)
-        const { data: clicksData } = await supabase.from('clicks').select('link_id').in('link_id', linkIds)
-        clicksData?.forEach(c => {
-          const pid = linkToPage[c.link_id]
-          if (pid) counts[pid] = (counts[pid] || 0) + 1
-        })
+    try {
+      let foldersQuery = supabase.from('folders').select('*').order('created_at')
+      let pagesQuery = supabase.from('pages').select('*').order('created_at')
+      if (!isAdmin && userId) {
+        foldersQuery = foldersQuery.eq('owner_id', userId)
+        pagesQuery = pagesQuery.eq('owner_id', userId)
       }
-      setClickCounts(counts)
+      const { data: foldersData } = await foldersQuery
+      const { data: pagesData } = await pagesQuery
+      setFolders(foldersData || [])
+      setPages(pagesData || [])
 
-      const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const { data: viewsData } = await supabase.from('page_views').select('country').in('page_id', pageIds).gte('created_at', since30d)
-      const countryCounts: Record<string, number> = {}
-      viewsData?.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1 })
-      setCountryStats(countryCounts)
+      if (pagesData && pagesData.length > 0) {
+        const pageIds = pagesData.map(p => p.id)
+        const counts: Record<string, number> = {}
+        pagesData.forEach(p => { counts[p.id] = 0 })
+
+        const { data: linksData } = await supabase.from('links').select('id, page_id').in('page_id', pageIds)
+        if (linksData && linksData.length > 0) {
+          const linkToPage: Record<string, string> = {}
+          linksData.forEach(l => { linkToPage[l.id] = l.page_id })
+          const linkIds = linksData.map(l => l.id)
+          const { data: clicksData } = await supabase.from('clicks').select('link_id').in('link_id', linkIds)
+          clicksData?.forEach(c => {
+            const pid = linkToPage[c.link_id]
+            if (pid) counts[pid] = (counts[pid] || 0) + 1
+          })
+        }
+        setClickCounts(counts)
+
+        try {
+          const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+          const { data: viewsData } = await supabase.from('page_views').select('country').in('page_id', pageIds).gte('created_at', since30d)
+          const countryCounts: Record<string, number> = {}
+          viewsData?.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1 })
+          setCountryStats(countryCounts)
+        } catch {
+          setCountryStats({})
+        }
+      }
+    } catch (err) {
+      console.error('loadData error:', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function createFolder() {
