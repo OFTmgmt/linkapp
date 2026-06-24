@@ -27,13 +27,16 @@ export default function PageViewTracker({ pageId }: { pageId: string }) {
       const device = getDevice()
       const referrer = getReferrerSource()
 
+      // Use Vercel's built-in geo API (no rate limit, no external call)
       let country = null
       let city = null
       try {
-        const res = await fetch('https://ipapi.co/json/')
-        const geo = await res.json()
-        country = geo.country_name ?? null
-        city = geo.city ?? null
+        const res = await fetch('/api/geo')
+        if (res.ok) {
+          const geo = await res.json()
+          country = geo.country ?? null
+          city = geo.city ?? null
+        }
       } catch {}
 
       await supabase.from('page_views').insert({ page_id: pageId, referrer, device, country, city })
