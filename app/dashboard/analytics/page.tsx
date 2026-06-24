@@ -72,12 +72,12 @@ export default function AnalyticsPage() {
     const prevSince = period !== 'custom' ? getPeriodStart(1) : since
 
     const [{ data: pagesData }, { data: viewsData }, { data: prevViewsData }, { data: clicksData }, { data: prevClicksData }, { data: linksData }] = await Promise.all([
-      supabase.from('pages').select('id, title, slug'),
-      supabase.from('page_views').select('page_id, country, referrer, device, created_at').gte('created_at', since).lte('created_at', until),
-      period !== 'custom' ? supabase.from('page_views').select('id').gte('created_at', prevSince).lt('created_at', since) : Promise.resolve({ data: [] }),
-      supabase.from('clicks').select('link_id, referrer, device, created_at').gte('created_at', since).lte('created_at', until),
-      period !== 'custom' ? supabase.from('clicks').select('id').gte('created_at', prevSince).lt('created_at', since) : Promise.resolve({ data: [] }),
-      supabase.from('links').select('id, page_id'),
+      supabase.from('pages').select('id, title, slug').limit(10000),
+      supabase.from('page_views').select('page_id, country, referrer, device, created_at').gte('created_at', since).lte('created_at', until).limit(200000),
+      period !== 'custom' ? supabase.from('page_views').select('id').gte('created_at', prevSince).lt('created_at', since).limit(200000) : Promise.resolve({ data: [] }),
+      supabase.from('clicks').select('link_id, referrer, device, created_at').gte('created_at', since).lte('created_at', until).limit(200000),
+      period !== 'custom' ? supabase.from('clicks').select('id').gte('created_at', prevSince).lt('created_at', since).limit(200000) : Promise.resolve({ data: [] }),
+      supabase.from('links').select('id, page_id').limit(10000),
     ])
 
     const views = viewsData || []

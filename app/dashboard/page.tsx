@@ -62,12 +62,13 @@ export default function Dashboard() {
         const counts: Record<string, number> = {}
         pagesData.forEach(p => { counts[p.id] = 0 })
 
-        const { data: linksData } = await supabase.from('links').select('id, page_id').in('page_id', pageIds)
+        const { data: linksData } = await supabase.from('links').select('id, page_id').in('page_id', pageIds).limit(10000)
         if (linksData && linksData.length > 0) {
           const linkToPage: Record<string, string> = {}
           linksData.forEach(l => { linkToPage[l.id] = l.page_id })
           const linkIds = linksData.map(l => l.id)
-          const { data: clicksData } = await supabase.from('clicks').select('link_id').in('link_id', linkIds)
+          const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+          const { data: clicksData } = await supabase.from('clicks').select('link_id').in('link_id', linkIds).gte('created_at', since30d).limit(200000)
           clicksData?.forEach(c => {
             const pid = linkToPage[c.link_id]
             if (pid) counts[pid] = (counts[pid] || 0) + 1

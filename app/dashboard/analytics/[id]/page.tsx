@@ -73,9 +73,9 @@ export default function PageAnalytics() {
     const linkIds = linksData?.map(l => l.id) || []
 
     const [{ data: viewsData }, { data: clicksData }] = await Promise.all([
-      supabase.from('page_views').select('country, referrer, device, created_at').eq('page_id', id).gte('created_at', since).lte('created_at', until),
+      supabase.from('page_views').select('country, referrer, device, created_at').eq('page_id', id).gte('created_at', since).lte('created_at', until).limit(200000),
       linkIds.length > 0
-        ? supabase.from('clicks').select('link_id, created_at').in('link_id', linkIds).gte('created_at', since).lte('created_at', until)
+        ? supabase.from('clicks').select('link_id, created_at').in('link_id', linkIds).gte('created_at', since).lte('created_at', until).limit(200000)
         : Promise.resolve({ data: [] }),
     ])
 

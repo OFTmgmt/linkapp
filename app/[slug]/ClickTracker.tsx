@@ -16,10 +16,16 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
 
   function trackClick() {
     const meta = getMeta()
+    const body = JSON.stringify({ link_id: link.id, page_title: page.title, page_slug: page.slug, ...meta })
+    // keepalive keeps the request alive even if the page navigates away (Instagram WebView, etc.)
     fetch('/api/track-click', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ link_id: link.id, page_title: page.title, page_slug: page.slug, ...meta }),
+      body,
+      keepalive: true,
+    }).catch(() => {
+      // Fallback: sendBeacon if fetch fails
+      navigator.sendBeacon('/api/track-click', new Blob([body], { type: 'application/json' }))
     })
   }
 
