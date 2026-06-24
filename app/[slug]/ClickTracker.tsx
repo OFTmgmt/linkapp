@@ -6,42 +6,19 @@ import AgeGate from './AgeGate'
 export default function ClickTracker({ link, page }: { link: Link, page: Page }) {
   const [showGate, setShowGate] = useState(false)
 
-  function getMeta() {
-    const ua = navigator.userAgent
-    const device = /tablet|ipad/i.test(ua) ? 'tablet' : /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop'
-    const ref = document.referrer
-    const referrer = !ref ? 'direct' : ref.includes('instagram') ? 'instagram' : ref.includes('facebook') || ref.includes('fb.com') ? 'facebook' : ref.includes('tiktok') ? 'tiktok' : 'other'
-    return { device, referrer }
-  }
-
-  function trackClick() {
-    const meta = getMeta()
-    const body = JSON.stringify({ link_id: link.id, page_title: page.title, page_slug: page.slug, ...meta })
-    // keepalive keeps the request alive even if the page navigates away (Instagram WebView, etc.)
-    fetch('/api/track-click', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      keepalive: true,
-    }).catch(() => {
-      // Fallback: sendBeacon if fetch fails
-      navigator.sendBeacon('/api/track-click', new Blob([body], { type: 'application/json' }))
-    })
-  }
-
   async function handleClick(e: React.MouseEvent) {
     if (page.age_gate) {
       e.preventDefault()
       setShowGate(true)
-    } else {
-      trackClick()
     }
+    // No age gate: browser follows href directly to /api/c/[id]
+    // The server records the click before redirecting — no JS tracking needed
   }
 
-  async function handleConfirm() {
+  function handleConfirm() {
     setShowGate(false)
-    trackClick()
-    window.location.href = `https://www.google.com/url?q=${encodeURIComponent(link.url)}`
+    // Navigate to server-side click tracker which records + redirects
+    window.location.href = `/api/c/${link.id}`
   }
 
   const size = link.btn_size || 'medium'
@@ -69,9 +46,7 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
     <>
       <div className={wrapClass}>
         <a
-          href={`https://www.google.com/url?q=${encodeURIComponent(link.url)}`}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={`/api/c/${link.id}`}
           onClick={handleClick}
           className={`block font-bold transition-all ${widthClass} ${alignClass} ${sizeClasses[size] || sizeClasses.medium} ${animationClasses[animation]}`}
           style={{
