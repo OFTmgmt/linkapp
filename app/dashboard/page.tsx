@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { Folder, Page } from '@/lib/types'
 import { validateSlug, validateTitle, validateFolderName, sanitizeSlug } from '@/lib/validation'
 import { useRole } from '@/lib/useRole'
-import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link, Pencil, Check, X, FolderInput } from 'lucide-react'
+import { Plus, FolderOpen, Paintbrush, Copy, ExternalLink, Trash2, LogOut, Settings, BarChart2, LineChart, Download, Link, Pencil, Check, X, FolderInput, Calendar } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
@@ -38,10 +38,28 @@ export default function Dashboard() {
   const [duplicating, setDuplicating] = useState(false)
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
   const [countryStats, setCountryStats] = useState<Record<string, number>>({})
+  const [folderStats, setFolderStats] = useState<Record<string, { open: boolean; from: string; to: string; count: number | null; loading: boolean }>>({})
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
   }, [roleLoading, userId, isAdmin])
+
+  function getParisStartOfDay(): string {
+    const now = new Date()
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).formatToParts(now)
+    const p: Record<string, string> = {}
+    parts.forEach(({ type, value }) => { p[type] = value })
+    const msIntoDay = (parseInt(p.hour) * 3600 + parseInt(p.minute) * 60 + parseInt(p.second)) * 1000
+    return new Date(now.getTime() - msIntoDay).toISOString()
+  }
+
+  function parisOffset(): string {
+    const tz = new Date().toLocaleString('en', { timeZone: 'Europe/Paris', timeZoneName: 'short' })
+    return tz.includes('GMT+2') ? '+02:00' : '+01:00'
+  }
 
   async function loadData() {
     setLoading(true)
@@ -62,8 +80,11 @@ export default function Dashboard() {
         const counts: Record<string, number> = {}
         pagesData.forEach(p => { counts[p.id] = 0 })
 
-        const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        const { data: rpcData } = await supabase.rpc('count_clicks_per_page', { page_ids: pageIds, since_date: since30d })
+        const { data: rpcData } = await supabase.rpc('count_clicks_per_page', {
+          page_ids: pageIds,
+          since_date: getParisStartOfDay(),
+          until_date: new Date().toISOString(),
+        })
         rpcData?.forEach((r: { page_id: string; cnt: number }) => {
           counts[r.page_id] = Number(r.cnt)
         })
@@ -84,6 +105,27 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchFolderRange(folderId: string) {
+    const stat = folderStats[folderId]
+    if (!stat || !stat.from || !stat.to) return
+    setFolderStats(prev => ({ ...prev, [folderId]: { ...prev[folderId], loading: true, count: null } }))
+    const folderPages = pages.filter(p => p.folder_id === folderId)
+    if (folderPages.length === 0) {
+      setFolderStats(prev => ({ ...prev, [folderId]: { ...prev[folderId], loading: false, count: 0 } }))
+      return
+    }
+    const offset = parisOffset()
+    const sinceDate = new Date(`${stat.from}T00:00:00${offset}`).toISOString()
+    const untilDate = new Date(`${stat.to}T23:59:59${offset}`).toISOString()
+    const { data: rpcData } = await supabase.rpc('count_clicks_per_page', {
+      page_ids: folderPages.map(p => p.id),
+      since_date: sinceDate,
+      until_date: untilDate,
+    })
+    const total = rpcData?.reduce((sum: number, r: { cnt: number }) => sum + Number(r.cnt), 0) ?? 0
+    setFolderStats(prev => ({ ...prev, [folderId]: { ...prev[folderId], loading: false, count: total } }))
   }
 
   async function createFolder() {
@@ -279,7 +321,7 @@ export default function Dashboard() {
           return (
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🏆 Classement des dossiers</h2>
+                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🏆 Classement des dossiers <span className="text-xs font-normal text-gray-400">(aujourd'hui)</span></h2>
                 <div className="space-y-2">
                   {ranked.map(({ folder, total }, i) => (
                     <div key={folder.id} className="flex items-center justify-between">
@@ -372,6 +414,21 @@ export default function Dashboard() {
                     >
                       <Plus size={14} /> Page
                     </button>
+                    <button
+                      onClick={() => {
+                        const today = new Date().toISOString().slice(0, 10)
+                        setFolderStats(prev => ({
+                          ...prev,
+                          [folder.id]: prev[folder.id]?.open
+                            ? { ...prev[folder.id], open: false }
+                            : { open: true, from: today, to: today, count: null, loading: false }
+                        }))
+                      }}
+                      className={`p-1 ${folderStats[folder.id]?.open ? 'text-purple-400' : 'text-gray-300 hover:text-purple-400'}`}
+                      title="Voir clics par période"
+                    >
+                      <Calendar size={16} />
+                    </button>
                     <button onClick={() => setExportFolder({ id: folder.id, name: folder.name })} className="text-gray-300 hover:text-green-500 p-1" title="Exporter CSV">
                       <Download size={16} />
                     </button>
@@ -380,6 +437,37 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
+
+                {folderStats[folder.id]?.open && (
+                  <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/10 flex items-center gap-3 flex-wrap">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Clics du</span>
+                    <input
+                      type="date"
+                      value={folderStats[folder.id]?.from || ''}
+                      onChange={e => setFolderStats(prev => ({ ...prev, [folder.id]: { ...prev[folder.id], from: e.target.value } }))}
+                      className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">au</span>
+                    <input
+                      type="date"
+                      value={folderStats[folder.id]?.to || ''}
+                      onChange={e => setFolderStats(prev => ({ ...prev, [folder.id]: { ...prev[folder.id], to: e.target.value } }))}
+                      className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
+                    <button
+                      onClick={() => fetchFolderRange(folder.id)}
+                      disabled={folderStats[folder.id]?.loading}
+                      className="bg-purple-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-600 disabled:opacity-50"
+                    >
+                      {folderStats[folder.id]?.loading ? '...' : 'Voir'}
+                    </button>
+                    {folderStats[folder.id]?.count !== null && !folderStats[folder.id]?.loading && (
+                      <span className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                        {folderStats[folder.id]?.count} clic{(folderStats[folder.id]?.count ?? 0) !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {folderPages.length === 0 ? (
                   <div className="px-6 py-8 text-center text-gray-300 text-sm">Aucune page dans ce dossier</div>
