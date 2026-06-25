@@ -108,7 +108,9 @@ export async function GET(
     notifyDiscord(link_id, link.page_id, page.title, page.slug, referrer, device, country, city).catch(() => {})
   }
 
-  // Redirect through Google to bypass Instagram detection
-  const destination = `https://www.google.com/url?q=${encodeURIComponent(link.url)}`
-  return NextResponse.redirect(destination, { status: 302 })
+  // Return a branded loading page that redirects via JS
+  // — the destination URL is only in JS, invisible to Instagram's static scanner
+  const dest = link.url
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chargement...</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:linear-gradient(135deg,#ff6eb4 0%,#a855f7 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:-apple-system,sans-serif}.box{text-align:center;color:#fff}.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 20px}@keyframes spin{to{transform:rotate(360deg)}}p{font-size:15px;opacity:.85;font-weight:500}</style></head><body><div class="box"><div class="spinner"></div><p>Chargement...</p></div><script>window.location.replace(${JSON.stringify(dest)})</script></body></html>`
+  return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 }
