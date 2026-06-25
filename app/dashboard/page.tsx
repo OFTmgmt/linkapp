@@ -39,6 +39,10 @@ export default function Dashboard() {
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
   const [countryStats, setCountryStats] = useState<Record<string, number>>({})
   const [folderStats, setFolderStats] = useState<Record<string, { open: boolean; from: string; to: string; count: number | null; loading: boolean }>>({})
+  const [leaderboardPickerOpen, setLeaderboardPickerOpen] = useState(false)
+  const [leaderboardPick, setLeaderboardPick] = useState({ from: new Date().toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) })
+  const [leaderboardCustomCounts, setLeaderboardCustomCounts] = useState<Record<string, number> | null>(null)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
 
   useEffect(() => {
     if (!roleLoading && userId) loadData()
@@ -105,6 +109,34 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function formatLeaderboardDate(dateStr: string): string {
+    const [year, month, day] = dateStr.split('-')
+    return new Date().getFullYear().toString() === year ? `${day}/${month}` : `${day}/${month}/${year.slice(2)}`
+  }
+
+  async function fetchLeaderboardRange(from: string, to: string) {
+    setLeaderboardLoading(true)
+    const offset = parisOffset()
+    const sinceDate = new Date(`${from}T00:00:00${offset}`).toISOString()
+    const untilDate = new Date(`${to}T23:59:59${offset}`).toISOString()
+    const pageIds = pages.map(p => p.id)
+    if (pageIds.length === 0) {
+      setLeaderboardCustomCounts({})
+      setLeaderboardLoading(false)
+      return
+    }
+    const { data: rpcData } = await supabase.rpc('count_clicks_per_page', {
+      page_ids: pageIds,
+      since_date: sinceDate,
+      until_date: untilDate,
+    })
+    const counts: Record<string, number> = {}
+    pages.forEach(p => { counts[p.id] = 0 })
+    rpcData?.forEach((r: { page_id: string; cnt: number }) => { counts[r.page_id] = Number(r.cnt) })
+    setLeaderboardCustomCounts(counts)
+    setLeaderboardLoading(false)
   }
 
   async function fetchFolderRange(folderId: string) {
@@ -313,26 +345,109 @@ export default function Dashboard() {
 
         {folders.length > 0 && (() => {
           const MEDALS = ['🥇', '🥈', '🥉']
+          const countsToUse = leaderboardCustomCounts ?? clickCounts
           const ranked = [...folders]
-            .map(f => ({ folder: f, total: pages.filter(p => p.folder_id === f.id).reduce((s, p) => s + (clickCounts[p.id] || 0), 0) }))
+            .map(f => ({ folder: f, total: pages.filter(p => p.folder_id === f.id).reduce((s, p) => s + (countsToUse[p.id] || 0), 0) }))
             .sort((a, b) => b.total - a.total)
           const countryTotal = Object.values(countryStats).reduce((a, b) => a + b, 0) || 1
           const topCountries = Object.entries(countryStats).sort((a, b) => b[1] - a[1]).slice(0, 6)
+          const leaderboardLabel = leaderboardCustomCounts !== null
+            ? leaderboardPick.from === leaderboardPick.to
+              ? `(${formatLeaderboardDate(leaderboardPick.from)})`
+              : `(${formatLeaderboardDate(leaderboardPick.from)} – ${formatLeaderboardDate(leaderboardPick.to)})`
+            : "(aujourd'hui)"
           return (
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-                <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🏆 Classement des dossiers <span className="text-xs font-normal text-gray-400">(aujourd'hui)</span></h2>
-                <div className="space-y-2">
-                  {ranked.map(({ folder, total }, i) => (
-                    <div key={folder.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-6 text-center flex-shrink-0">{i < 3 ? MEDALS[i] : <span className="text-xs text-gray-400 font-bold">{i + 1}.</span>}</span>
-                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
-                      </div>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white ml-2 flex-shrink-0">{total} clics</span>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                    🏆 Classement des dossiers <span className="text-xs font-normal text-gray-400">{leaderboardLabel}</span>
+                  </h2>
+                  <button
+                    onClick={() => setLeaderboardPickerOpen(v => !v)}
+                    className={`p-1 rounded ${leaderboardPickerOpen ? 'text-purple-500' : 'text-gray-300 hover:text-purple-400'}`}
+                    title="Changer la période"
+                  >
+                    <Calendar size={14} />
+                  </button>
                 </div>
+
+                {leaderboardPickerOpen && (
+                  <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-900/10 rounded-lg space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => {
+                          const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+                          setLeaderboardPick({ from: today, to: today })
+                          setLeaderboardCustomCounts(null)
+                        }}
+                        className={`text-xs px-2 py-1 rounded-md font-medium ${leaderboardCustomCounts === null ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-300'}`}
+                      >
+                        Aujourd'hui
+                      </button>
+                      {[
+                        { label: 'Hier', from: 1, to: 1 },
+                        { label: 'Avant-hier', from: 2, to: 2 },
+                        { label: 'J-3', from: 3, to: 3 },
+                        { label: '7 jours', from: 7, to: 0 },
+                        { label: '30 jours', from: 30, to: 0 },
+                      ].map(({ label, from: dFrom, to: dTo }) => {
+                        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+                        const f = new Date(Date.now() - dFrom * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+                        const t = dTo === 0 ? today : new Date(Date.now() - dTo * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+                        const isActive = leaderboardCustomCounts !== null && leaderboardPick.from === f && leaderboardPick.to === t
+                        return (
+                          <button
+                            key={label}
+                            onClick={() => { setLeaderboardPick({ from: f, to: t }); fetchLeaderboardRange(f, t) }}
+                            className={`text-xs px-2 py-1 rounded-md ${isActive ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300'}`}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Du</span>
+                      <input
+                        type="date"
+                        value={leaderboardPick.from}
+                        onChange={e => setLeaderboardPick(p => ({ ...p, from: e.target.value }))}
+                        className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">au</span>
+                      <input
+                        type="date"
+                        value={leaderboardPick.to}
+                        onChange={e => setLeaderboardPick(p => ({ ...p, to: e.target.value }))}
+                        className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      />
+                      <button
+                        onClick={() => fetchLeaderboardRange(leaderboardPick.from, leaderboardPick.to)}
+                        disabled={leaderboardLoading}
+                        className="bg-purple-500 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-600 disabled:opacity-50"
+                      >
+                        {leaderboardLoading ? '...' : 'Voir'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {leaderboardLoading ? (
+                  <div className="text-center py-4 text-xs text-gray-400">Chargement...</div>
+                ) : (
+                  <div className="space-y-2">
+                    {ranked.map(({ folder, total }, i) => (
+                      <div key={folder.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 text-center flex-shrink-0">{i < 3 ? MEDALS[i] : <span className="text-xs text-gray-400 font-bold">{i + 1}.</span>}</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{folder.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white ml-2 flex-shrink-0">{total} clics</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
                 <h2 className="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-3">🌍 Pays <span className="text-xs font-normal text-gray-400">(30 jours)</span></h2>
