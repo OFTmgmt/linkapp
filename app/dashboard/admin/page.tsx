@@ -75,7 +75,7 @@ export default function AdminPage() {
       body: JSON.stringify({ userId }),
     })
     const data = await res.json()
-    if (data.error) alert(data.error)
+    if (data.error) alert(typeof data.error === 'string' ? data.error : JSON.stringify(data.error))
     else loadUsers()
   }
 

@@ -23,7 +23,11 @@ export async function DELETE(request: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
+  // Unlink all folders and pages owned by this user before deleting (avoids FK constraint)
+  await admin.from('folders').update({ owner_id: null }).eq('owner_id', userId)
+  await admin.from('pages').update({ owner_id: null }).eq('owner_id', userId)
+
   const { error } = await admin.auth.admin.deleteUser(userId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: error.message || String(error) }, { status: 400 })
   return NextResponse.json({ success: true })
 }
