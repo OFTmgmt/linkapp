@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LinkApp",
-  description: "Gérez vos landing pages",
+  title: "My Links",
+  description: "Your links in one place",
 };
 
 export default function RootLayout({

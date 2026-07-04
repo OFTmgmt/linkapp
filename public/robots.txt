@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /api/
+Disallow: /l/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Allow: /
+
+# Profile pages are intentionally crawlable for link previews

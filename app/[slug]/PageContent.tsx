@@ -37,7 +37,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
           ))}
         </div>
 
-        <p className="text-white/40 text-xs mt-6">Powered by LinkApp</p>
+        <p className="text-white/20 text-xs mt-6">© {new Date().getFullYear()}</p>
       </div>
       <InstagramBrowserBanner />
     </div>

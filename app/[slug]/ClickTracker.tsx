@@ -18,7 +18,7 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
   function handleConfirm() {
     setShowGate(false)
     // Navigate to server-side click tracker which records + redirects
-    window.location.href = `/api/c/${link.id}`
+    window.location.href = `/l/${link.id}`
   }
 
   const size = link.btn_size || 'medium'
@@ -46,7 +46,7 @@ export default function ClickTracker({ link, page }: { link: Link, page: Page })
     <>
       <div className={wrapClass}>
         <a
-          href={`/api/c/${link.id}`}
+          href={`/l/${link.id}`}
           onClick={handleClick}
           className={`block font-bold transition-all ${widthClass} ${alignClass} ${sizeClasses[size] || sizeClasses.medium} ${animationClasses[animation]}`}
           style={{

@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!page) return {}
 
   const title = page.title
-  const description = page.bio || 'Liens exclusifs'
+  const description = `Retrouvez tous les liens de ${page.title}`
   const image = page.avatar_url || undefined
 
   return {
@@ -18,14 +18,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title,
       description,
-      type: 'profile',
-      images: image ? [{ url: image }] : [],
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-      images: image ? [image] : [],
+      type: 'website',
+      url: `https://my-links-page.com/${slug}`,
+      siteName: 'My Links',
+      images: image ? [{ url: image, width: 400, height: 400 }] : [],
     },
     robots: { index: false, follow: false },
     referrer: 'no-referrer',
