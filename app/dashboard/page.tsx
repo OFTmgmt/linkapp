@@ -160,6 +160,12 @@ export default function Dashboard() {
     setFolderStats(prev => ({ ...prev, [folderId]: { ...prev[folderId], loading: false, count: total } }))
   }
 
+  // A page always belongs to whoever owns its folder — otherwise the assigned
+  // manager can't see pages an admin adds to their folder.
+  function folderOwner(folderId: string | null): string | null {
+    return folders.find(f => f.id === folderId)?.owner_id ?? userId
+  }
+
   async function createFolder() {
     const err = validateFolderName(newFolderName)
     if (err) { setErrors({ folder: err }); return }
@@ -183,7 +189,7 @@ export default function Dashboard() {
       title: newPage.title.trim(),
       slug: sanitizeSlug(newPage.slug),
       background_color: newPage.background_color,
-      owner_id: userId,
+      owner_id: folderOwner(selectedFolder),
     })
     setNewPage({ title: '', slug: '', background_color: '#ff6eb4' })
     setShowNewPage(false)
@@ -215,7 +221,7 @@ export default function Dashboard() {
         button_border: page.button_border,
         age_gate: page.age_gate,
         show_location: page.show_location,
-        owner_id: userId,
+        owner_id: folderOwner(page.folder_id),
       }).select().single()
       if (newPageData && links && links.length > 0) {
         await supabase.from('links').insert(links.map(l => ({
@@ -277,7 +283,7 @@ export default function Dashboard() {
   }
 
   async function movePage(pageId: string, targetFolderId: string) {
-    await supabase.from('pages').update({ folder_id: targetFolderId }).eq('id', pageId)
+    await supabase.from('pages').update({ folder_id: targetFolderId, owner_id: folderOwner(targetFolderId) }).eq('id', pageId)
     setMovingPage(null)
     loadData()
   }

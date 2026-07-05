@@ -1,12 +1,14 @@
 export type Folder = {
   id: string
   name: string
+  owner_id: string | null
   created_at: string
 }
 
 export type Page = {
   id: string
   folder_id: string
+  owner_id: string | null
   slug: string
   title: string
   bio: string | null
