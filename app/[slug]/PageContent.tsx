@@ -1,5 +1,6 @@
 'use client'
 import { Page, Link } from '@/lib/types'
+import { fontFamilyById } from '@/lib/fontOptions'
 import LocationBadge from './LocationBadge'
 import ClickTracker from './ClickTracker'
 import PageViewTracker from './PageViewTracker'
@@ -14,7 +15,7 @@ export default function PageContent({ page, links }: { page: Page, links: Link[]
     : { backgroundColor: page.background_color }
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 py-12 relative" style={{ ...bgStyle, paddingTop: `${(page.content_offset ?? 0) + 48}px` }}>
+    <div className="min-h-screen flex flex-col items-center px-4 py-12 relative" style={{ ...bgStyle, paddingTop: `${(page.content_offset ?? 0) + 48}px`, fontFamily: fontFamilyById(page.font_family) }}>
       {page.background_image && (
         <div className="absolute inset-0 bg-black" style={{ opacity: (page.bg_overlay ?? 15) / 100 }} />
       )}

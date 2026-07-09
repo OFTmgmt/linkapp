@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 
 const supabase = createClient()
 import { Page, Link } from '@/lib/types'
+import { FONT_OPTIONS, fontFamilyById } from '@/lib/fontOptions'
 import { validateSlug, validateTitle, validateBio, validateUrl, validateLinkLabel, sanitizeSlug } from '@/lib/validation'
 import { Plus, Trash2, ArrowUp, ArrowDown, ArrowLeft, Save, Upload, X } from 'lucide-react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
@@ -142,6 +143,7 @@ export default function EditPage() {
       button_radius: page.button_radius,
       button_shadow: page.button_shadow,
       button_border: page.button_border,
+      font_family: page.font_family ?? null,
     }).eq('id', id)
 
     for (const link of links) {
@@ -296,6 +298,26 @@ export default function EditPage() {
                   value={page.content_offset ?? 0}
                   onChange={e => setPage({ ...page, content_offset: parseInt(e.target.value) })}
                   className="w-full accent-pink-500 mt-2" />
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Police d'écriture</h2>
+              <div className="grid grid-cols-4 gap-2">
+                {FONT_OPTIONS.map(f => {
+                  const active = (page.font_family || 'inter') === f.id
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setPage({ ...page, font_family: f.id })}
+                      style={{ fontFamily: f.family }}
+                      className={`py-3 px-2 rounded-xl border-2 text-center transition-all ${active ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-600 hover:border-pink-300'}`}
+                    >
+                      <span className="block text-lg leading-tight text-gray-800 dark:text-white">Aa</span>
+                      <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{f.label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -491,7 +513,7 @@ export default function EditPage() {
             <div className="sticky top-6">
               <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-2 font-medium uppercase tracking-wide">Aperçu</p>
               <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-gray-200 dark:border-gray-600" style={{ height: '580px' }}>
-                <div className="w-full h-full flex flex-col items-center justify-center px-4 py-8 overflow-y-auto relative" style={bgStyle}>
+                <div className="w-full h-full flex flex-col items-center justify-center px-4 py-8 overflow-y-auto relative" style={{ ...bgStyle, fontFamily: fontFamilyById(page.font_family) }}>
                   {page.background_image && (
                     <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: (page.bg_overlay ?? 30) / 100 }} />
                   )}

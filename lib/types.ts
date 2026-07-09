@@ -26,6 +26,7 @@ export type Page = {
   button_radius: string
   button_shadow: boolean
   button_border: string
+  font_family: string | null
   created_at: string
 }
 
