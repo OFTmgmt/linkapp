@@ -32,6 +32,8 @@ export default function Dashboard() {
   const [exporting, setExporting] = useState(false)
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
+  const [editingSlug, setEditingSlug] = useState<string | null>(null)
+  const [editingSlugValue, setEditingSlugValue] = useState('')
   const [movingPage, setMovingPage] = useState<Page | null>(null)
   const [duplicatingPage, setDuplicatingPage] = useState<Page | null>(null)
   const [duplicateCount, setDuplicateCount] = useState(1)
@@ -338,6 +340,17 @@ export default function Dashboard() {
     if (!name) return
     await supabase.from('folders').update({ name }).eq('id', id)
     setEditingFolder(null)
+    loadData()
+  }
+
+  async function renameSlug(pageId: string) {
+    const slug = sanitizeSlug(editingSlugValue.trim())
+    const err = validateSlug(slug)
+    if (err) { alert(err); return }
+    if (pages.some(p => p.id !== pageId && p.slug === slug)) { alert(`Le lien "${slug}" existe déjà.`); return }
+    const { error } = await supabase.from('pages').update({ slug }).eq('id', pageId)
+    if (error) { alert(error.message); return }
+    setEditingSlug(null)
     loadData()
   }
 
@@ -665,7 +678,30 @@ export default function Dashboard() {
                           <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: page.background_color }} />
                           <div>
                             <p className="font-medium text-gray-800 dark:text-white">{page.internal_name || page.title}</p>
-                            <p className="text-xs text-gray-400">/{page.slug}</p>
+                            {editingSlug === page.id ? (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-xs text-gray-400 flex-shrink-0">my-links-page.com/</span>
+                                <input
+                                  autoFocus
+                                  value={editingSlugValue}
+                                  onChange={e => setEditingSlugValue(sanitizeSlug(e.target.value))}
+                                  onKeyDown={e => { if (e.key === 'Enter') renameSlug(page.id); if (e.key === 'Escape') setEditingSlug(null) }}
+                                  className="text-xs border rounded px-1.5 py-0.5 w-40 focus:outline-none focus:ring-1 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                  placeholder="lien-unique"
+                                />
+                                <button onClick={() => renameSlug(page.id)} className="text-green-500 hover:text-green-600"><Check size={14} /></button>
+                                <button onClick={() => setEditingSlug(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={14} /></button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setEditingSlug(page.id); setEditingSlugValue(page.slug) }}
+                                className="group flex items-center gap-1 text-xs text-gray-400 hover:text-pink-500"
+                                title="Modifier le lien"
+                              >
+                                /{page.slug}
+                                <Pencil size={11} className="opacity-0 group-hover:opacity-100" />
+                              </button>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
