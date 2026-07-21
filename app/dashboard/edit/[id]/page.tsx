@@ -35,6 +35,8 @@ export default function EditPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bgFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -109,6 +111,16 @@ export default function EditPage() {
 
   async function savePage() {
     if (!page) return
+    setSaveError('')
+    setSaveSuccess(false)
+
+    // Auto-add https:// to link URLs that forgot the protocol (most common mistake)
+    const linksToSave = links.map(l => {
+      const u = l.url.trim()
+      return u && !/^https?:\/\//i.test(u) ? { ...l, url: `https://${u}` } : { ...l, url: u }
+    })
+    if (JSON.stringify(linksToSave) !== JSON.stringify(links)) setLinks(linksToSave)
+
     const newErrors: Record<string, string> = {}
     const titleErr = validateTitle(page.title)
     const slugErr = validateSlug(page.slug)
@@ -116,16 +128,24 @@ export default function EditPage() {
     if (titleErr) newErrors.title = titleErr
     if (slugErr) newErrors.slug = slugErr
     if (bioErr) newErrors.bio = bioErr
-    links.forEach((link, i) => {
+    linksToSave.forEach((link, i) => {
       const labelErr = validateLinkLabel(link.label)
       const urlErr = validateUrl(link.url)
       if (labelErr) newErrors[`link_label_${i}`] = labelErr
       if (urlErr) newErrors[`link_url_${i}`] = urlErr
     })
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      const hasLinkErr = Object.keys(newErrors).some(k => k.startsWith('link_'))
+      setSaveError(hasLinkErr
+        ? 'Un lien est invalide (surligné en rouge plus bas) : vérifie que chaque lien a un label ET une adresse valide.'
+        : 'Certains champs sont invalides (surlignés en rouge). Corrige-les avant de sauvegarder.')
+      return
+    }
     setErrors({})
     setSaving(true)
-    await supabase.from('pages').update({
+
+    const { error: pageErr } = await supabase.from('pages').update({
       title: page.title,
       bio: page.bio,
       avatar_url: page.avatar_url,
@@ -146,14 +166,31 @@ export default function EditPage() {
       font_family: page.font_family ?? null,
     }).eq('id', id)
 
-    for (const link of links) {
-      if (link.id.startsWith('new-')) {
-        await supabase.from('links').insert({ page_id: id, label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align })
-      } else {
-        await supabase.from('links').update({ label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align }).eq('id', link.id)
+    if (pageErr) {
+      setSaving(false)
+      // Preserve the user's work — do NOT reload from DB on failure
+      setSaveError(
+        pageErr.code === '23505'
+          ? `Ce lien (/${page.slug}) est déjà utilisé par une autre page. Choisis-en un autre.`
+          : `La sauvegarde a échoué : ${pageErr.message}. Tes modifications sont toujours là, réessaie.`
+      )
+      return
+    }
+
+    for (const link of linksToSave) {
+      const payload = { label: link.label, url: link.url, icon: link.icon, position: link.position, btn_size: link.btn_size, btn_width: link.btn_width, btn_animation: link.btn_animation, btn_align: link.btn_align }
+      const { error: linkErr } = link.id.startsWith('new-')
+        ? await supabase.from('links').insert({ page_id: id, ...payload })
+        : await supabase.from('links').update(payload).eq('id', link.id)
+      if (linkErr) {
+        setSaving(false)
+        setSaveError(`La page est sauvegardée mais un lien a échoué : ${linkErr.message}. Réessaie.`)
+        return
       }
     }
+
     setSaving(false)
+    setSaveSuccess(true)
     loadPage()
   }
 
@@ -193,6 +230,17 @@ export default function EditPage() {
             <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
           </button>
         </div>
+
+        {saveError && (
+          <div className="mb-6 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            {saveError}
+          </div>
+        )}
+        {saveSuccess && (
+          <div className="mb-6 rounded-xl border border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-300">
+            ✓ Page sauvegardée avec succès.
+          </div>
+        )}
 
         <div className="flex gap-6">
           {/* Colonne gauche — édition */}
