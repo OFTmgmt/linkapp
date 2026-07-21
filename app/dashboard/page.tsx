@@ -36,6 +36,10 @@ export default function Dashboard() {
   const [duplicatingPage, setDuplicatingPage] = useState<Page | null>(null)
   const [duplicateCount, setDuplicateCount] = useState(1)
   const [duplicating, setDuplicating] = useState(false)
+  const [duplicateFolder, setDuplicateFolder] = useState<string | null>(null)
+  const [duplicateSlugs, setDuplicateSlugs] = useState<string[]>([''])
+  const [duplicateError, setDuplicateError] = useState('')
+  const [showMoveSelected, setShowMoveSelected] = useState(false)
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set())
   const [countryStats, setCountryStats] = useState<Record<string, number>>({})
   const [folderStats, setFolderStats] = useState<Record<string, { open: boolean; from: string; to: string; count: number | null; loading: boolean }>>({})
@@ -196,17 +200,57 @@ export default function Dashboard() {
     loadData()
   }
 
-  async function duplicatePage(page: Page, count: number) {
+  // Strip prior "-copy-123…" / "-2" noise so suggested slugs stay clean
+  function baseSlug(slug: string): string {
+    return slug.replace(/-copy-\d+.*$/, '').replace(/-\d+$/, '')
+  }
+
+  function openDuplicate(page: Page) {
+    setDuplicatingPage(page)
+    setDuplicateCount(1)
+    setDuplicateFolder(page.folder_id)
+    setDuplicateSlugs([sanitizeSlug(`${baseSlug(page.slug)}-1`)])
+    setDuplicateError('')
+  }
+
+  function updateDuplicateCount(n: number) {
+    if (!duplicatingPage) return
+    const c = Math.min(30, Math.max(1, n || 1))
+    setDuplicateCount(c)
+    const base = baseSlug(duplicatingPage.slug)
+    setDuplicateSlugs(prev => {
+      const next = [...prev]
+      while (next.length < c) next.push(sanitizeSlug(`${base}-${next.length + 1}`))
+      next.length = c
+      return next
+    })
+  }
+
+  async function duplicatePage() {
+    if (!duplicatingPage) return
+    const page = duplicatingPage
+    const targetFolder = duplicateFolder || page.folder_id
+    const slugs = duplicateSlugs.map(s => sanitizeSlug(s.trim()))
+
+    if (slugs.some(s => !s)) { setDuplicateError('Chaque copie doit avoir un lien.'); return }
+    if (new Set(slugs).size !== slugs.length) { setDuplicateError('Deux copies ont le même lien.'); return }
+    const existing = new Set(pages.map(p => p.slug))
+    const collision = slugs.find(s => existing.has(s))
+    if (collision) { setDuplicateError(`Le lien "${collision}" existe déjà.`); return }
+    for (const s of slugs) {
+      const err = validateSlug(s)
+      if (err) { setDuplicateError(`"${s}" : ${err}`); return }
+    }
+    setDuplicateError('')
     setDuplicating(true)
+
     const { data: links } = await supabase.from('links').select('*').eq('page_id', page.id)
-    for (let i = 0; i < count; i++) {
-      const suffix = count > 1 ? ` (copie ${i + 1})` : ' (copie)'
-      const newSlug = `${page.slug}-copy-${Date.now()}-${i}`
-      const { data: newPageData } = await supabase.from('pages').insert({
-        folder_id: page.folder_id,
+    for (let i = 0; i < slugs.length; i++) {
+      const { data: newPageData, error } = await supabase.from('pages').insert({
+        folder_id: targetFolder,
         title: page.title,
-        internal_name: `${page.internal_name || page.title}${suffix}`,
-        slug: newSlug,
+        internal_name: slugs[i],
+        slug: slugs[i],
         bio: page.bio,
         avatar_url: page.avatar_url,
         background_color: page.background_color,
@@ -219,10 +263,17 @@ export default function Dashboard() {
         button_radius: page.button_radius,
         button_shadow: page.button_shadow,
         button_border: page.button_border,
+        font_family: page.font_family,
         age_gate: page.age_gate,
         show_location: page.show_location,
-        owner_id: folderOwner(page.folder_id),
+        owner_id: folderOwner(targetFolder),
       }).select().single()
+      if (error) {
+        setDuplicating(false)
+        setDuplicateError(`Erreur sur "${slugs[i]}" : ${error.message}`)
+        loadData()
+        return
+      }
       if (newPageData && links && links.length > 0) {
         await supabase.from('links').insert(links.map(l => ({
           page_id: newPageData.id,
@@ -240,6 +291,7 @@ export default function Dashboard() {
     setDuplicating(false)
     setDuplicatingPage(null)
     setDuplicateCount(1)
+    setDuplicateSlugs([''])
     loadData()
   }
 
@@ -271,6 +323,13 @@ export default function Dashboard() {
     if (!confirm(`Supprimer ${selectedPages.size} page${selectedPages.size > 1 ? 's' : ''} ?`)) return
     await supabase.from('pages').delete().in('id', [...selectedPages])
     setSelectedPages(new Set())
+    loadData()
+  }
+
+  async function moveSelectedToFolder(folderId: string) {
+    await supabase.from('pages').update({ folder_id: folderId, owner_id: folderOwner(folderId) }).in('id', [...selectedPages])
+    setSelectedPages(new Set())
+    setShowMoveSelected(false)
     loadData()
   }
 
@@ -629,7 +688,7 @@ export default function Dashboard() {
                             <button onClick={() => setMovingPage(page)} className="text-gray-300 hover:text-orange-400 p-1.5" title="Déplacer vers un dossier">
                               <FolderInput size={16} />
                             </button>
-                            <button onClick={() => { setDuplicatingPage(page); setDuplicateCount(1) }} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
+                            <button onClick={() => openDuplicate(page)} className="text-gray-300 hover:text-green-500 p-1.5" title="Dupliquer">
                               <Copy size={16} />
                             </button>
                             <button onClick={() => deletePage(page.id)} className="text-gray-300 hover:text-red-400 p-1.5" title="Supprimer">
@@ -678,32 +737,93 @@ export default function Dashboard() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-2xl px-6 py-3 shadow-2xl flex items-center gap-4">
           <span className="text-sm font-medium">{selectedPages.size} page{selectedPages.size > 1 ? 's' : ''} sélectionnée{selectedPages.size > 1 ? 's' : ''}</span>
           <button onClick={() => setSelectedPages(new Set())} className="text-gray-400 hover:text-white text-sm">Annuler</button>
+          <button onClick={() => setShowMoveSelected(true)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+            <FolderInput size={14} /> Déplacer
+          </button>
           <button onClick={deleteSelected} className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
             <Trash2 size={14} /> Supprimer
           </button>
         </div>
       )}
 
-      {duplicatingPage && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      {showMoveSelected && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-lg dark:text-white mb-1">Dupliquer la page</h3>
-            <p className="text-sm text-gray-400 mb-4"><span className="text-gray-700 dark:text-gray-300 font-medium">{duplicatingPage.internal_name || duplicatingPage.title}</span></p>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nombre de copies (1–30)</label>
-              <input
-                type="number"
-                min={1}
-                max={30}
-                value={duplicateCount}
-                onChange={e => setDuplicateCount(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Déplacer {selectedPages.size} page{selectedPages.size > 1 ? 's' : ''}</h3>
+            <p className="text-sm text-gray-400 mb-4">Choisir le dossier de destination</p>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {folders.map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => moveSelectedToFolder(folder.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-pink-50 hover:border-pink-200 dark:hover:bg-pink-900/20 text-left transition-colors"
+                >
+                  <FolderOpen size={18} className="text-pink-400 flex-shrink-0" />
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{folder.name}</span>
+                </button>
+              ))}
             </div>
+            <button onClick={() => setShowMoveSelected(false)} className="w-full mt-4 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {duplicatingPage && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] flex flex-col">
+            <h3 className="font-semibold text-lg dark:text-white mb-1">Dupliquer la page</h3>
+            <p className="text-sm text-gray-400 mb-4">À partir de <span className="text-gray-700 dark:text-gray-300 font-medium">{duplicatingPage.internal_name || duplicatingPage.title}</span></p>
+            <div className="space-y-3 overflow-y-auto">
+              <div className="flex gap-3">
+                <div className="w-28">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Copies (1–30)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={duplicateCount}
+                    onChange={e => updateDuplicateCount(parseInt(e.target.value))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Dossier de destination</label>
+                  <select
+                    value={duplicateFolder || ''}
+                    onChange={e => setDuplicateFolder(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  >
+                    {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Lien de chaque copie (modifiable)</label>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  {duplicateSlugs.map((s, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">my-links-page.com/</span>
+                      <input
+                        value={s}
+                        onChange={e => { const v = sanitizeSlug(e.target.value); setDuplicateSlugs(prev => prev.map((x, idx) => idx === i ? v : x)); setDuplicateError('') }}
+                        className="flex-1 min-w-0 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pink-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                        placeholder="lien-unique"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {duplicateError && <p className="text-xs text-red-500">{duplicateError}</p>}
+            </div>
+
             <div className="flex gap-3 mt-6">
               <button onClick={() => setDuplicatingPage(null)} className="flex-1 border rounded-lg py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600">Annuler</button>
               <button
-                onClick={() => duplicatePage(duplicatingPage, duplicateCount)}
+                onClick={duplicatePage}
                 disabled={duplicating}
                 className="flex-1 bg-pink-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-pink-600 disabled:opacity-50 flex items-center justify-center gap-2"
               >
