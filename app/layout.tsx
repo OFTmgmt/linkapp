@@ -5,6 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Links",
   description: "Your links in one place",
+  other: { "app-version": "dup-move-v1" },
 };
 
 export default function RootLayout({
