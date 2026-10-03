@@ -3,22 +3,12 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 
 export default function AgeGate({ onConfirm, onCancel }: { onConfirm: () => void, onCancel?: () => void }) {
-  const [step, setStep] = useState<1 | 2>(1)
   const [animating, setAnimating] = useState(false)
 
   function handleClick() {
-    if (step === 1) {
-      setAnimating(true)
-      setTimeout(() => {
-        setAnimating(false)
-        setStep(2)
-      }, 400)
-    } else {
-      setAnimating(true)
-      setTimeout(() => {
-        onConfirm()
-      }, 400)
-    }
+    setAnimating(true)
+    // petit délai pour l'animation avant de rediriger
+    setTimeout(() => { onConfirm() }, 350)
   }
 
   return (
@@ -29,24 +19,24 @@ export default function AgeGate({ onConfirm, onCancel }: { onConfirm: () => void
             <X size={16} />
           </button>
         )}
-        <button
-          onClick={handleClick}
-          className={`bg-white/95 rounded-3xl px-8 py-6 text-center shadow-2xl max-w-xs w-full mx-4 transition-all duration-300 ${animating ? 'scale-95 opacity-70' : 'scale-100 opacity-100 hover:scale-105'}`}
-        >
-          <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-500 text-white text-sm font-bold mb-3 transition-all duration-300 ${animating ? 'scale-110' : ''}`}>
+        <div className={`bg-white/95 rounded-3xl px-8 py-7 text-center shadow-2xl max-w-xs w-full mx-4 transition-all duration-300 ${animating ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500 text-white text-base font-bold mb-3">
             18+
           </div>
           <p className="font-bold text-gray-800 text-lg leading-tight">
-            {step === 1 ? 'Are you 18 or older?' : 'Confirm your age'}
+            Contenu réservé aux adultes
           </p>
-          <p className="text-gray-400 text-sm mt-1">
-            {step === 1 ? 'Click to continue' : 'Click again to access'}
+          <p className="text-gray-500 text-sm mt-1.5">
+            Vous devez avoir 18 ans ou plus pour accéder à ce contenu.
           </p>
-          <div className="flex justify-center gap-1 mt-4">
-            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${step === 1 ? 'bg-red-400 scale-125' : 'bg-gray-200'}`} />
-            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${step === 2 ? 'bg-red-400 scale-125' : 'bg-gray-200'}`} />
-          </div>
-        </button>
+          <button
+            onClick={handleClick}
+            disabled={animating}
+            className="mt-5 w-full bg-red-500 text-white font-semibold rounded-2xl py-3 transition-all duration-200 hover:bg-red-600 active:scale-95 disabled:opacity-70"
+          >
+            {"J'ai 18 ans ou plus"}
+          </button>
+        </div>
       </div>
     </div>
   )
