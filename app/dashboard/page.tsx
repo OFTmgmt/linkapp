@@ -384,6 +384,14 @@ export default function Dashboard() {
 
   if (loading) return <div className="flex items-center justify-center h-screen text-gray-500 dark:text-gray-400">Chargement...</div>
 
+  // Les compteurs par page suivent la période choisie dans le classement des dossiers
+  const displayCounts = leaderboardCustomCounts ?? clickCounts
+  const activePeriodLabel = leaderboardCustomCounts !== null
+    ? (leaderboardPick.from === leaderboardPick.to
+        ? formatLeaderboardDate(leaderboardPick.from)
+        : `${formatLeaderboardDate(leaderboardPick.from)} – ${formatLeaderboardDate(leaderboardPick.to)}`)
+    : null
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-6xl mx-auto p-6">
@@ -561,6 +569,24 @@ export default function Dashboard() {
           </div>
         )}
 
+        {activePeriodLabel && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 px-4 py-2.5">
+            <p className="text-sm text-purple-700 dark:text-purple-300">
+              📅 Clics affichés par page : <span className="font-semibold">{activePeriodLabel}</span>
+            </p>
+            <button
+              onClick={() => {
+                const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+                setLeaderboardPick({ from: today, to: today })
+                setLeaderboardCustomCounts(null)
+              }}
+              className="text-xs font-medium px-3 py-1 rounded-lg bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/40 whitespace-nowrap"
+            >
+              {"Revenir à aujourd'hui"}
+            </button>
+          </div>
+        )}
+
         <div className="space-y-6">
           {folders.map(folder => {
             const folderPages = pages.filter(p => p.folder_id === folder.id)
@@ -706,7 +732,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            <span className="font-semibold text-gray-800 dark:text-white">{clickCounts[page.id] || 0}</span> clics
+                            <span className="font-semibold text-gray-800 dark:text-white">{displayCounts[page.id] || 0}</span> clics{activePeriodLabel ? ` · ${activePeriodLabel}` : ''}
                           </span>
                           <div className="flex items-center gap-1">
                             <a href={`/${page.slug}`} target="_blank" className="text-gray-300 hover:text-pink-500 p-1.5" title="Voir">
