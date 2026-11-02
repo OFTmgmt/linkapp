@@ -28,7 +28,7 @@ export default function PageAnalytics() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d')
+  const [period, setPeriod] = useState<'today' | 'yesterday' | '7d' | '30d' | 'custom'>('7d')
   const [customFrom, setCustomFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
   const [customTo, setCustomTo] = useState(new Date().toISOString().slice(0, 10))
   const [appliedDates, setAppliedDates] = useState({ from: customFrom, to: customTo })
@@ -49,12 +49,14 @@ export default function PageAnalytics() {
     if (period === 'custom') return new Date(appliedDates.from + 'T00:00:00').toISOString()
     const now = new Date()
     if (period === 'today') { now.setHours(0,0,0,0); return now.toISOString() }
+    if (period === 'yesterday') { now.setDate(now.getDate() - 1); now.setHours(0,0,0,0); return now.toISOString() }
     if (period === '7d') { now.setDate(now.getDate() - 7); return now.toISOString() }
     now.setDate(now.getDate() - 30); return now.toISOString()
   }
 
   function getPeriodEnd(): string {
     if (period === 'custom') return new Date(appliedDates.to + 'T23:59:59').toISOString()
+    if (period === 'yesterday') { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d.toISOString() }
     return new Date().toISOString()
   }
 
@@ -92,7 +94,7 @@ export default function PageAnalytics() {
 
     // Time series
     const buckets: Record<string, { views: number; clicks: number }> = {}
-    if (period === 'today') {
+    if (period === 'today' || period === 'yesterday') {
       for (let h = 0; h < 24; h++) buckets[`${h}h`] = { views: 0, clicks: 0 }
       views.forEach(v => { const h = new Date(v.created_at).getHours(); buckets[`${h}h`].views++ })
       clicks.forEach(c => { const h = new Date(c.created_at).getHours(); buckets[`${h}h`].clicks++ })
@@ -122,7 +124,7 @@ export default function PageAnalytics() {
     setTimeSeries(Object.entries(buckets).map(([label, d]) => ({ label, ...d })))
 
     // Hourly
-    if (period === 'today') {
+    if (period === 'today' || period === 'yesterday') {
       const hh: Record<number, number> = {}
       for (let i = 0; i < 24; i++) hh[i] = 0
       views.forEach(v => { hh[new Date(v.created_at).getHours()]++ })
@@ -161,10 +163,10 @@ export default function PageAnalytics() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
-              {(['today', '7d', '30d', 'custom'] as const).map(p => (
+              {(['today', 'yesterday', '7d', '30d', 'custom'] as const).map(p => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                  {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
+                  {p === 'today' ? "Aujourd'hui" : p === 'yesterday' ? 'Hier' : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
                 </button>
               ))}
             </div>
@@ -318,7 +320,7 @@ export default function PageAnalytics() {
             </div>
 
             {/* Heures de pointe */}
-            {period === 'today' && (
+            {(period === 'today' || period === 'yesterday') && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
                 <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Heures de pointe</h2>
                 <ResponsiveContainer width="100%" height={140}>

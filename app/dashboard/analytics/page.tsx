@@ -33,7 +33,7 @@ const PURPLE = '#8b5cf6'
 export default function AnalyticsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d')
+  const [period, setPeriod] = useState<'today' | 'yesterday' | '7d' | '30d' | 'custom'>('7d')
   const [customFrom, setCustomFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
   const [customTo, setCustomTo] = useState(new Date().toISOString().slice(0, 10))
   const [appliedDates, setAppliedDates] = useState({ from: customFrom, to: customTo })
@@ -56,12 +56,16 @@ export default function AnalyticsPage() {
     if (period === 'today') {
       const d = new Date(now); d.setDate(d.getDate() - offset); d.setHours(0,0,0,0); return d.toISOString()
     }
+    if (period === 'yesterday') {
+      const d = new Date(now); d.setDate(d.getDate() - 1 - offset); d.setHours(0,0,0,0); return d.toISOString()
+    }
     if (period === '7d') { now.setDate(now.getDate() - 7 * (offset + 1)); return now.toISOString() }
     now.setDate(now.getDate() - 30 * (offset + 1)); return now.toISOString()
   }
 
   function getPeriodEnd(): string {
     if (period === 'custom') return new Date(appliedDates.to + 'T23:59:59').toISOString()
+    if (period === 'yesterday') { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(23,59,59,999); return d.toISOString() }
     return new Date().toISOString()
   }
 
@@ -92,7 +96,7 @@ export default function AnalyticsPage() {
 
     // Time series
     const buckets: Record<string, { views: number; clicks: number }> = {}
-    if (period === 'today') {
+    if (period === 'today' || period === 'yesterday') {
       for (let h = 0; h < 24; h++) buckets[`${h}h`] = { views: 0, clicks: 0 }
       views.forEach(v => { const h = new Date(v.created_at).getHours(); buckets[`${h}h`].views++ })
       clicks.forEach(c => { const h = new Date(c.created_at).getHours(); buckets[`${h}h`].clicks++ })
@@ -121,8 +125,8 @@ export default function AnalyticsPage() {
     }
     setTimeSeries(Object.entries(buckets).map(([label, d]) => ({ label, ...d })))
 
-    // Hourly heatmap (today only)
-    if (period === 'today') {
+    // Hourly heatmap (today / yesterday)
+    if (period === 'today' || period === 'yesterday') {
       const hh: Record<number, number> = {}
       for (let i = 0; i < 24; i++) hh[i] = 0
       views.forEach(v => { hh[new Date(v.created_at).getHours()]++ })
@@ -196,10 +200,10 @@ export default function AnalyticsPage() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Analytics</h1>
           <div className="flex flex-col items-end gap-2">
             <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-1">
-              {(['today', '7d', '30d', 'custom'] as const).map(p => (
+              {(['today', 'yesterday', '7d', '30d', 'custom'] as const).map(p => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${period === p ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                  {p === 'today' ? "Aujourd'hui" : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
+                  {p === 'today' ? "Aujourd'hui" : p === 'yesterday' ? 'Hier' : p === '7d' ? '7 jours' : p === '30d' ? '30 jours' : '📅 Dates'}
                 </button>
               ))}
             </div>
@@ -378,8 +382,8 @@ export default function AnalyticsPage() {
               {/* Heatmap horaire */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
                 <h2 className="font-semibold text-gray-800 dark:text-white mb-1">Heures de pointe</h2>
-                <p className="text-xs text-gray-400 mb-4">Vues par heure (aujourd'hui)</p>
-                {period === 'today' && hourly.length > 0 ? (
+                <p className="text-xs text-gray-400 mb-4">Vues par heure ({period === 'yesterday' ? 'hier' : "aujourd'hui"})</p>
+                {(period === 'today' || period === 'yesterday') && hourly.length > 0 ? (
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={hourly} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                       <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#9ca3af' }} axisLine={false} tickLine={false} interval={5} />
@@ -389,7 +393,7 @@ export default function AnalyticsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-gray-400 text-sm text-center py-6">Disponible en vue "Aujourd'hui"</p>
+                  <p className="text-gray-400 text-sm text-center py-6">Disponible en vue Aujourd&apos;hui / Hier</p>
                 )}
               </div>
             </div>

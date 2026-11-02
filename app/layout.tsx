@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Links",
   description: "Your links in one place",
-  other: { "app-version": "agegate-fr-v1" },
+  other: { "app-version": "stats-hier-v1" },
 };
 
 export default function RootLayout({
