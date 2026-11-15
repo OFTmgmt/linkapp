@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page, Link } from '@/lib/types'
+import { compressImage } from '@/lib/compressImage'
 import { Plus, Trash2, ArrowUp, ArrowDown, ArrowLeft, Save, Upload, X } from 'lucide-react'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
@@ -93,9 +94,10 @@ export default function EditPage() {
   }
 
   async function uploadBgImage(file: File) {
-    const ext = file.name.split('.').pop()
-    const filename = `bg-${id}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('avatars').upload(filename, file, { upsert: true })
+    // Compression avant upload — divise par ~15 le poids des photos de fond
+    const blob = await compressImage(file, 1280, 0.8)
+    const filename = `bg-${id}-${Date.now()}.jpg`
+    const { error } = await supabase.storage.from('avatars').upload(filename, blob, { upsert: true, contentType: 'image/jpeg' })
     if (!error) {
       const { data } = supabase.storage.from('avatars').getPublicUrl(filename)
       setPage(prev => prev ? { ...prev, background_image: data.publicUrl } : prev)

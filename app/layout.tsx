@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Links",
   description: "Your links in one place",
-  other: { "app-version": "dashboard-periode-v1" },
+  other: { "app-version": "img-compress-v1" },
 };
 
 export default function RootLayout({
